@@ -1,0 +1,176 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_signed:
+        description: Build a signed IPA using Apple signing secrets
+        required: true
+        type: boolean
+        default: false
+      export_method:
+        description: Signed export method
+        required: true
+        type: choice
+        default: development
+        options:
+          - development
+          - ad-hoc
+          - app-store
+
+jobs:
+  unsigned-ipa:
+    name: Build unsigned IPA
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Web Asset (Vite)
+        run: npm run build
+
+      - name: Sync Capacitor iOS
+        run: npx cap sync ios
+
+      - name: Build iOS App Without Signing
+        run: |
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath ios/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package Unsigned IPA
+        run: |
+          mkdir -p build/ios-unsigned/Payload
+          cp -R ios/DerivedData/Build/Products/Release-iphoneos/App.app build/ios-unsigned/Payload/
+          (cd build/ios-unsigned && zip -qry ../ScoreIt-unsigned.ipa Payload)
+
+      - name: Upload Unsigned IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scoreit-ios-unsigned
+          path: build/ScoreIt-unsigned.ipa
+
+  signed-ipa:
+    name: Build signed IPA
+    runs-on: macos-latest
+    if: ${{ inputs.build_signed }}
+
+    env:
+      IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID || 'com.pr2102.scoreit' }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+      P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+      BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      EXPORT_METHOD: ${{ inputs.export_method }}
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Validate Signing Secrets
+        run: |
+          test -n "$APPLE_TEAM_ID" || (echo "Missing APPLE_TEAM_ID secret" && exit 1)
+          test -n "$BUILD_CERTIFICATE_BASE64" || (echo "Missing BUILD_CERTIFICATE_BASE64 secret" && exit 1)
+          test -n "$P12_PASSWORD" || (echo "Missing P12_PASSWORD secret" && exit 1)
+          test -n "$BUILD_PROVISION_PROFILE_BASE64" || (echo "Missing BUILD_PROVISION_PROFILE_BASE64 secret" && exit 1)
+          test -n "$KEYCHAIN_PASSWORD" || (echo "Missing KEYCHAIN_PASSWORD secret" && exit 1)
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Web Asset (Vite)
+        run: npm run build
+
+      - name: Sync Capacitor iOS
+        run: npx cap sync ios
+
+      - name: Install Apple Signing Assets
+        run: |
+          CERTIFICATE_PATH="$RUNNER_TEMP/build_certificate.p12"
+          PP_PATH="$RUNNER_TEMP/build_profile.mobileprovision"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$CERTIFICATE_PATH"
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o "$PP_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          PROFILE_UUID=$(security cms -D -i "$PP_PATH" | plutil -extract UUID raw -)
+          PROFILE_NAME=$(security cms -D -i "$PP_PATH" | plutil -extract Name raw -)
+          cp "$PP_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          echo "PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
+
+      - name: Archive iOS App
+        run: |
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath "$RUNNER_TEMP/ScoreIt.xcarchive" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            PRODUCT_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            clean archive
+
+      - name: Export Signed IPA
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>$EXPORT_METHOD</string>
+            <key>teamID</key>
+            <string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>$IOS_BUNDLE_ID</key>
+              <string>$PROFILE_NAME</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$RUNNER_TEMP/ScoreIt.xcarchive" \
+            -exportPath build/ios-signed \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+
+      - name: Upload Signed IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scoreit-ios-signed
+          path: build/ios-signed/*.ipa
