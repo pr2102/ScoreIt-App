@@ -44,7 +44,7 @@ function LudoPage({ onBack }) {
         <ChevronLeft size={26} />
       </button>
       <section className="mx-auto w-full max-w-[1180px] px-3 pb-8 pt-20 sm:px-6 lg:px-0">
-        <OriginalLudoGame />
+        <OriginalLudoGame onBack={onBack} />
       </section>
     </main>
   )
@@ -62,7 +62,7 @@ function ChessPage({ onBack }) {
         <ChevronLeft size={26} />
       </button>
       <section className="mx-auto w-full max-w-[1180px] px-3 pb-8 pt-20 sm:px-6 lg:px-0">
-        <OriginalChessGame />
+        <OriginalChessGame onBack={onBack} />
       </section>
     </main>
   )

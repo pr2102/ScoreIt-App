@@ -30,6 +30,8 @@ const CHESS_COLOR_LABELS = {
   white: 'White',
   black: 'Black',
 }
+const CHESS_SAVE_KEY = 'scoreit:chess-saves'
+const CHESS_MAX_SAVES = 5
 const CHESS_PIECE_SYMBOLS = {
   white: {
     king: '\u2654',
@@ -58,6 +60,32 @@ const CHESS_PIECE_TOKEN_CLASSNAMES = {
 }
 
 let chessAudioContext = null
+
+function createChessSaveId() {
+  return globalThis.crypto?.randomUUID?.() ?? `chess-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function loadSavedChessGames() {
+  try {
+    const saves = JSON.parse(localStorage.getItem(CHESS_SAVE_KEY) || '[]')
+    return Array.isArray(saves) ? saves.slice(0, CHESS_MAX_SAVES) : []
+  } catch {
+    return []
+  }
+}
+
+function writeSavedChessGames(saves) {
+  try {
+    localStorage.setItem(CHESS_SAVE_KEY, JSON.stringify(saves.slice(0, CHESS_MAX_SAVES)))
+  } catch {
+    // Saves are optional; chess should keep working if storage is unavailable.
+  }
+}
+
+function formatChessSaveTime(value) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? 'Saved game' : date.toLocaleString()
+}
 
 function getChessAudioContext() {
   if (typeof window === 'undefined') {
@@ -1111,10 +1139,12 @@ function ChessCapturedRow({ label, pieces, accentClassName }) {
   )
 }
 
-function ChessGame() {
+function ChessGame({ onBack }) {
   const [mode, setMode] = useState('ai')
   const [moveFeedback, setMoveFeedback] = useState('')
+  const [saveNotice, setSaveNotice] = useState('')
   const [animatedSquares, setAnimatedSquares] = useState([])
+  const [savedGames, setSavedGames] = useState(loadSavedChessGames)
   const [scoreboard, setScoreboard] = useState({
     white: 0,
     black: 0,
@@ -1219,8 +1249,44 @@ function ChessGame() {
 
   const resetBoard = () => {
     setMoveFeedback('')
+    setSaveNotice('')
     setAnimatedSquares([])
     setGameState(createInitialChessState())
+    playChessSound('select')
+  }
+
+  const saveCurrentChessGame = () => {
+    if (gameState.aiThinking) {
+      setSaveNotice('Wait for the AI move to finish before saving.')
+      playChessSound('invalid')
+      return
+    }
+
+    const save = {
+      id: createChessSaveId(),
+      savedAt: new Date().toISOString(),
+      mode,
+      scoreboard,
+      gameState,
+    }
+
+    setSavedGames((currentSaves) => {
+      const nextSaves = [save, ...currentSaves].slice(0, CHESS_MAX_SAVES)
+      writeSavedChessGames(nextSaves)
+      return nextSaves
+    })
+    setSaveNotice('Game saved.')
+    playChessSound('select')
+  }
+
+  const loadChessGame = (save) => {
+    window.clearTimeout(animationTimerRef.current)
+    setMode(save.mode || 'ai')
+    setScoreboard(save.scoreboard || { white: 0, black: 0, draws: 0 })
+    setGameState(save.gameState || createInitialChessState())
+    setMoveFeedback('')
+    setAnimatedSquares([])
+    setSaveNotice('Saved game loaded.')
     playChessSound('select')
   }
 
@@ -1235,6 +1301,7 @@ function ChessGame() {
 
     setMode(nextMode)
     setMoveFeedback('')
+    setSaveNotice('')
     setAnimatedSquares([])
     setGameState(createInitialChessState())
     playChessSound('select')
@@ -1524,6 +1591,32 @@ function ChessGame() {
                 <span className={chipClassName}>Pawn promoted to queen</span>
               ) : null}
             </div>
+            {saveNotice ? <p className="mt-4 text-sm font-semibold text-muted">{saveNotice}</p> : null}
+          </div>
+
+          <div className="rounded-[1.35rem] border border-line bg-[color:var(--portfolio-glass-soft)] p-5 shadow-[var(--portfolio-soft-shadow)]">
+            <p className={cardLabelClassName}>Saved games</p>
+            {savedGames.length ? (
+              <div className="mt-3 grid gap-2">
+                {savedGames.map((save, index) => (
+                  <button
+                    key={save.id}
+                    type="button"
+                    className="rounded-[1rem] border border-line bg-[color:var(--portfolio-glass-inline)] px-4 py-3 text-left text-sm font-semibold text-ink shadow-[var(--portfolio-soft-shadow)]"
+                    onClick={() => loadChessGame(save)}
+                  >
+                    Save {index + 1}
+                    <span className="mt-1 block text-xs font-medium text-muted">
+                      {formatChessSaveTime(save.savedAt)} | {save.mode === 'ai' ? 'vs AI' : '2 players'} | Move {(save.gameState?.moveCount ?? 0) + 1}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm leading-7 text-muted">
+                Save up to 5 chess games and resume them later.
+              </p>
+            )}
           </div>
 
           <ChessCapturedRow
@@ -1547,6 +1640,29 @@ function ChessGame() {
             New chess round
           </button>
         </div>
+      </div>
+      <div className="fixed inset-x-3 bottom-3 z-50 grid grid-cols-3 gap-2 rounded-[1.1rem] border border-line bg-[color:var(--portfolio-glass-strong)] p-2 shadow-[var(--portfolio-strong-shadow)] backdrop-blur-xl sm:hidden">
+        <button
+          type="button"
+          className="rounded-[0.9rem] border border-line bg-[color:var(--portfolio-glass-inline)] px-2 py-3 text-xs font-black uppercase tracking-[0.08em] text-ink"
+          onClick={onBack}
+        >
+          Previous
+        </button>
+        <button
+          type="button"
+          className="rounded-[0.9rem] border border-line bg-[color:var(--portfolio-glass-inline)] px-2 py-3 text-xs font-black uppercase tracking-[0.08em] text-ink"
+          onClick={saveCurrentChessGame}
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          className="rounded-[0.9rem] border border-line bg-[color:var(--portfolio-glass-inline)] px-2 py-3 text-xs font-black uppercase tracking-[0.08em] text-ink"
+          onClick={resetBoard}
+        >
+          End
+        </button>
       </div>
     </div>
   )

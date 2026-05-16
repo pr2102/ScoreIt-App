@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, Edit3, MoreVertical } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 
 function ballsToOvers(balls) {
   return `${Math.floor(balls / 6)}.${balls % 6}`
@@ -23,8 +23,8 @@ function TabButton({ active, children, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`h-14 rounded-full text-lg font-medium transition ${
-        active ? 'bg-yellow-300 text-slate-700' : 'bg-white text-[#3954b4]'
+      className={`scoreit-match-tab h-11 rounded-2xl px-3 text-[0.74rem] font-black uppercase tracking-[0.06em] transition sm:h-12 sm:text-sm ${
+        active ? 'scoreit-match-tab-active' : ''
       }`}
     >
       {children}
@@ -163,6 +163,59 @@ function ScoreboardView({ match }) {
   )
 }
 
+function NamePrompt({ innings, onSaveBatterName, onSaveBowlerName }) {
+  const pendingBatter = innings.pendingBatterId
+    ? innings.batsmen.find((player) => player.id === innings.pendingBatterId)
+    : null
+  const isBowlerPrompt = !pendingBatter && innings.pendingBowler
+  const fallbackName = pendingBatter?.name || `Bowler ${Math.floor(innings.legalBalls / 6) + 1}`
+  const [name, setName] = useState(fallbackName)
+
+  if (!pendingBatter && !isBowlerPrompt) return null
+
+  const title = pendingBatter ? 'New batsman name' : 'New bowler name'
+  const description = pendingBatter
+    ? 'A wicket has fallen. Enter the next batsman before scoring continues.'
+    : 'Over completed. Enter the bowler for the next over.'
+
+  const save = () => {
+    if (pendingBatter) {
+      onSaveBatterName(name)
+    } else {
+      onSaveBowlerName(name)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end bg-slate-950/70 p-4 backdrop-blur-sm sm:items-center sm:justify-center">
+      <section className="scoreit-live-card w-full rounded-[1.5rem] bg-white p-5 shadow-2xl sm:max-w-md">
+        <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-300">
+          Required
+        </p>
+        <h2 className="mt-2 text-2xl font-black text-slate-900">{title}</h2>
+        <p className="mt-2 text-sm font-bold leading-6 text-slate-500">{description}</p>
+        <input
+          autoFocus
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') save()
+          }}
+          className="mt-5 h-14 w-full rounded-2xl border border-white/10 bg-slate-100 px-4 text-lg font-black text-slate-900 outline-none"
+          placeholder={pendingBatter ? 'Enter batsman name' : 'Enter bowler name'}
+        />
+        <button
+          type="button"
+          onClick={save}
+          className="mt-4 h-14 w-full rounded-2xl bg-emerald-300 text-base font-black text-slate-950"
+        >
+          Save Name
+        </button>
+      </section>
+    </div>
+  )
+}
+
 function OversView({ match }) {
   return (
     <section className="px-5 py-8">
@@ -205,28 +258,42 @@ export default function Dashboard({
   onScore,
   onUndo,
   onRotate,
+  onSaveBatterName,
+  onSaveBowlerName,
   onNewMatch,
 }) {
   const [tab, setTab] = useState('Live Score')
-  const canScore = match.status === 'live'
+  const hasPendingName = Boolean(innings.pendingBatterId || innings.pendingBowler)
+  const promptKey = innings.pendingBatterId
+    ? `batter-${innings.pendingBatterId}`
+    : innings.pendingBowler
+      ? `bowler-${innings.legalBalls}`
+      : 'none'
+  const canScore = match.status === 'live' && !hasPendingName
   const thisOver = innings.currentOverEvents
 
   return (
     <main className="min-h-svh bg-white text-slate-800">
-      <header className="bg-[#3954b4] px-5 pb-8 pt-12 text-white">
-        <div className="mb-8 flex items-center justify-between">
-          <button onClick={onNewMatch} className="flex h-10 w-10 items-center justify-center" type="button">
-            <ChevronLeft size={34} />
+      <header className="scoreit-match-header px-4 pb-6 pt-10 text-white sm:px-6 sm:pt-12">
+        <div className="mb-6 flex items-center gap-3 pr-14">
+          <button
+            onClick={onNewMatch}
+            className="scoreit-match-back flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
+            type="button"
+            aria-label="Back to matches"
+          >
+            <ChevronLeft size={25} />
           </button>
-          <h1 className="text-3xl font-medium">
-            {match.setup.team1} v/s {match.setup.team2}
-          </h1>
-          <div className="flex gap-5">
-            <Edit3 size={28} />
-            <MoreVertical size={30} />
+          <div className="min-w-0">
+            <p className="scoreit-live-badge text-[0.62rem] font-black uppercase tracking-[0.24em] text-emerald-100">
+              Match Center
+            </p>
+            <h1 className="mt-1 max-w-[16rem] text-xl font-black leading-[1.08] tracking-[-0.02em] sm:max-w-none sm:text-3xl">
+              {match.setup.team1} <span className="text-amber-200">v/s</span> {match.setup.team2}
+            </h1>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="scoreit-match-tabs grid grid-cols-3 gap-2 rounded-[1.35rem] p-1.5">
           {['Live Score', 'Scoreboard', 'Overs'].map((item) => (
             <TabButton key={item} active={tab === item} onClick={() => setTab(item)}>
               {item}
@@ -300,6 +367,12 @@ export default function Dashboard({
           </p>
         </section>
       ) : null}
+      <NamePrompt
+        key={promptKey}
+        innings={innings}
+        onSaveBatterName={onSaveBatterName}
+        onSaveBowlerName={onSaveBowlerName}
+      />
     </main>
   )
 }

@@ -235,6 +235,73 @@ select:focus-visible {
   will-change: opacity, transform;
 }
 
+.scoreit-match-header {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid color-mix(in srgb, var(--brand-emerald) 26%, transparent);
+  border-radius: 0 0 1.8rem 1.8rem;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(139, 255, 143, 0.22), transparent 34%),
+    radial-gradient(circle at 88% 4%, rgba(255, 213, 31, 0.2), transparent 30%),
+    linear-gradient(135deg, rgba(6, 18, 33, 0.96), rgba(10, 34, 42, 0.9) 48%, rgba(28, 18, 46, 0.92)) !important;
+  box-shadow:
+    0 20px 52px rgba(0, 0, 0, 0.28),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.scoreit-match-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.08) 42%, transparent 68%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 12px);
+  opacity: 0.7;
+}
+
+.scoreit-match-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+.scoreit-match-back {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.09);
+  color: #f8fafc;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.scoreit-match-tabs {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(2, 6, 23, 0.26);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(18px);
+}
+
+.scoreit-match-tab {
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(226, 232, 240, 0.72);
+}
+
+.scoreit-match-tab-active {
+  border-color: rgba(255, 236, 154, 0.5);
+  background:
+    linear-gradient(135deg, rgba(255, 230, 92, 0.96), rgba(255, 184, 0, 0.94)) !important;
+  color: #172554 !important;
+  box-shadow:
+    0 14px 30px rgba(255, 213, 31, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.scoreit-theme[data-theme='light'] .scoreit-match-header {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(16, 185, 129, 0.22), transparent 34%),
+    radial-gradient(circle at 88% 4%, rgba(245, 158, 11, 0.2), transparent 30%),
+    linear-gradient(135deg, rgba(16, 185, 129, 0.92), rgba(14, 165, 233, 0.88) 48%, rgba(79, 70, 229, 0.9)) !important;
+}
+
 .scoreit-floating-card {
   animation: scoreit-card-float 5.5s ease-in-out infinite;
 }
@@ -395,34 +462,45 @@ select:focus-visible {
 }
 
 .scoreit-ludo-page {
-  --portfolio-glass-strong: rgba(209, 223, 231, 0.78);
-  --portfolio-glass-soft: rgba(194, 210, 219, 0.78);
-  --portfolio-glass-inline: rgba(202, 217, 225, 0.82);
-  --portfolio-glass-chip: rgba(190, 206, 215, 0.84);
-  --portfolio-glass-hover: rgba(222, 234, 240, 0.9);
-  --portfolio-glass-ghost-hover: rgba(159, 188, 202, 0.34);
-  --portfolio-glass-border: rgba(237, 245, 248, 0.46);
-  --portfolio-glass-border-strong: rgba(244, 249, 251, 0.58);
+  --color-ink: #f8edf7;
+  --color-muted: #d5bfd3;
+  --color-accent: #ff68be;
+  --color-accent-strong: #ffc1e8;
+  --color-accent-soft: rgb(255 104 190 / 0.15);
+  --color-teal: #b28cff;
+  --color-teal-soft: rgb(178 140 255 / 0.16);
+  --color-line: rgb(255 193 232 / 0.14);
+  --color-line-strong: rgb(255 193 232 / 0.28);
+  --color-surface: rgb(38 10 36 / 0.78);
+  --color-surface-strong: rgb(48 14 46 / 0.94);
+  --portfolio-glass-strong: rgba(57, 18, 53, 0.8);
+  --portfolio-glass-soft: rgba(47, 14, 44, 0.74);
+  --portfolio-glass-inline: rgba(52, 18, 49, 0.8);
+  --portfolio-glass-chip: rgba(60, 20, 56, 0.8);
+  --portfolio-glass-hover: rgba(72, 26, 68, 0.92);
+  --portfolio-glass-ghost-hover: rgba(255, 255, 255, 0.07);
+  --portfolio-glass-border: rgba(255, 193, 232, 0.18);
+  --portfolio-glass-border-strong: rgba(255, 193, 232, 0.28);
   --portfolio-focus-glow:
-    radial-gradient(circle, rgba(22, 185, 221, 0.24), rgba(46, 115, 255, 0.08) 48%, transparent 72%);
-  --portfolio-inline-shadow: 0 18px 35px rgba(11, 56, 86, 0.14);
-  --portfolio-soft-shadow: 0 14px 28px rgba(11, 56, 86, 0.16);
-  --portfolio-strong-shadow: 0 20px 48px rgba(11, 56, 86, 0.2);
+    radial-gradient(circle, rgba(255, 104, 190, 0.18), rgba(124, 66, 238, 0.12) 48%, transparent 72%);
+  --portfolio-inline-shadow: 0 20px 38px rgba(0, 0, 0, 0.26);
+  --portfolio-soft-shadow: 0 18px 34px rgba(0, 0, 0, 0.2);
+  --portfolio-strong-shadow: 0 24px 54px rgba(0, 0, 0, 0.28);
   --portfolio-primary-button-gradient:
-    linear-gradient(135deg, #16b9dd 0%, #2e73ff 100%);
-  --portfolio-primary-button-shadow: 0 16px 32px rgba(13, 121, 188, 0.28);
+    linear-gradient(135deg, #ff68be 0%, #8e37ff 100%);
+  --portfolio-primary-button-shadow: 0 16px 32px rgba(151, 29, 106, 0.32);
   min-height: 100svh;
-  color: #0d2636 !important;
+  color: #f8edf7 !important;
   background:
-    radial-gradient(circle at 12% 12%, rgba(22, 185, 221, 0.16), transparent 31%),
-    radial-gradient(circle at 86% 14%, rgba(46, 115, 255, 0.16), transparent 28%),
-    radial-gradient(circle at 48% 84%, rgba(110, 208, 255, 0.14), transparent 34%),
-    linear-gradient(180deg, #dcecf3 0%, #cedfe7 34%, #bfd2dc 68%, #d6e2e8 100%) !important;
+    radial-gradient(circle at 14% 10%, rgba(255, 85, 197, 0.16), transparent 30%),
+    radial-gradient(circle at 86% 16%, rgba(124, 66, 238, 0.2), transparent 30%),
+    radial-gradient(circle at 48% 84%, rgba(255, 126, 214, 0.12), transparent 34%),
+    linear-gradient(180deg, #160512 0%, #180714 34%, #100310 68%, #09020b 100%) !important;
   font-family: "Aptos", "Segoe UI", sans-serif;
 }
 
 .scoreit-theme .scoreit-ludo-page {
-  color: #0d2636 !important;
+  color: #f8edf7 !important;
 }
 
 .scoreit-theme .scoreit-ludo-page,
@@ -457,6 +535,48 @@ select:focus-visible {
 
 .scoreit-theme .scoreit-ludo-page [class*='rounded'] {
   animation: none;
+}
+
+@media (max-width: 768px) {
+  .scoreit-ludo-page:has(.ludo-started) {
+    background:
+      radial-gradient(circle at 50% 18%, rgba(70, 23, 95, 0.56), transparent 34%),
+      radial-gradient(circle at 24% 68%, rgba(11, 78, 107, 0.28), transparent 34%),
+      radial-gradient(circle at 82% 78%, rgba(209, 48, 118, 0.18), transparent 30%),
+      linear-gradient(180deg, #160818 0%, #070511 44%, #120718 100%) !important;
+    overflow: hidden;
+  }
+
+  .scoreit-ludo-page:has(.ludo-started) .scoreit-ludo-back,
+  .scoreit-ludo-page:has(.ludo-started) .ludo-game-info,
+  .scoreit-ludo-page:has(.ludo-started) .ludo-game-side-panel,
+  .scoreit-ludo-page:has(.ludo-started) .ludo-board-heading {
+    display: none !important;
+  }
+
+  .scoreit-ludo-page:has(.ludo-started) > section {
+    max-width: none !important;
+    min-height: 100svh;
+    padding: 0 !important;
+  }
+
+  .scoreit-ludo-page:has(.ludo-started) .ludo-started,
+  .scoreit-ludo-page:has(.ludo-started) .ludo-board-stage {
+    display: block;
+    min-height: 100svh;
+  }
+
+  .scoreit-ludo-page:has(.ludo-started) .ludo-board-card {
+    min-height: 100svh;
+    align-content: center;
+    border: 0;
+    border-radius: 0;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.12), transparent 45%),
+      linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0));
+    box-shadow: none;
+    padding: 0.35rem 0.35rem 4.8rem;
+  }
 }
 
 .scoreit-theme [class*='rounded'] {

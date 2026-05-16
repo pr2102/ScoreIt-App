@@ -19,6 +19,8 @@ import {
 } from '../../classes'
 
 const LUDO_PLAYER_COUNT_OPTIONS = [2, 3, 4]
+const LUDO_SAVE_KEY = 'scoreit:ludo-saves'
+const LUDO_MAX_SAVES = 5
 const LUDO_PLAYER_COLOR_SETS = {
   2: ['red', 'yellow'],
   3: ['red', 'blue', 'yellow'],
@@ -28,6 +30,7 @@ const LUDO_LAST_TRACK_PROGRESS = 50
 const LUDO_FINAL_PROGRESS = 56
 const LUDO_SAFE_TRACK_INDICES = new Set([0, 8, 13, 21, 26, 34, 39, 47])
 const LUDO_NEUTRAL_CELL_COLOR = '#e7edf4'
+const LUDO_BASE_INNER_COLOR = '#d8e0e7'
 const LUDO_PLACEMENT_LABELS = {
   1: '1st',
   2: '2nd',
@@ -215,36 +218,36 @@ const LUDO_BASE_TOKEN_ANCHORS = [
 ]
 const LUDO_CLASSIC_TONES = {
   red: {
-    color: '#ef1b24',
+    color: '#d80d24',
     base: 'bg-[#ef1b24]',
     lane: 'bg-[#ef1b24]',
     start: 'bg-[#ef1b24]',
     token: 'bg-[#ef1b24]',
-    border: 'border-[#9f1118]',
+    border: 'border-[#7f0b17]',
   },
   green: {
-    color: '#05a84f',
+    color: '#008c47',
     base: 'bg-[#05a84f]',
     lane: 'bg-[#05a84f]',
     start: 'bg-[#05a84f]',
     token: 'bg-[#05a84f]',
-    border: 'border-[#047338]',
+    border: 'border-[#03552d]',
   },
   yellow: {
-    color: '#f7d719',
+    color: '#d8b600',
     base: 'bg-[#f7d719]',
     lane: 'bg-[#f7d719]',
     start: 'bg-[#f7d719]',
     token: 'bg-[#f7d719]',
-    border: 'border-[#b69b00]',
+    border: 'border-[#8f7400]',
   },
   blue: {
-    color: '#27aeea',
+    color: '#078ac8',
     base: 'bg-[#27aeea]',
     lane: 'bg-[#27aeea]',
     start: 'bg-[#27aeea]',
     token: 'bg-[#27aeea]',
-    border: 'border-[#157aa8]',
+    border: 'border-[#075b86]',
   },
 }
 const LUDO_DICE_DOCK_PLACEMENTS = {
@@ -333,6 +336,32 @@ const LUDO_DEFAULT_CONTROLLERS = {
   blue: 'human',
   yellow: 'human',
   green: 'human',
+}
+
+function createLudoSaveId() {
+  return globalThis.crypto?.randomUUID?.() ?? `ludo-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function loadSavedLudoGames() {
+  try {
+    const saves = JSON.parse(localStorage.getItem(LUDO_SAVE_KEY) || '[]')
+    return Array.isArray(saves) ? saves.slice(0, LUDO_MAX_SAVES) : []
+  } catch {
+    return []
+  }
+}
+
+function writeSavedLudoGames(saves) {
+  try {
+    localStorage.setItem(LUDO_SAVE_KEY, JSON.stringify(saves.slice(0, LUDO_MAX_SAVES)))
+  } catch {
+    // Saves are optional; gameplay should continue if storage is unavailable.
+  }
+}
+
+function formatLudoSaveTime(value) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? 'Saved game' : date.toLocaleString()
 }
 
 const ludoTrackIndexByKey = LUDO_TRACK_COORDS.reduce((map, coordinate, index) => {
@@ -1223,7 +1252,11 @@ function getLudoCellBackgroundColor({
     return getLudoColor(extraHomePathPlayerId)
   }
 
-  if (isBaseInner || isPathCell || trackIndex !== undefined) {
+  if (isBaseInner) {
+    return LUDO_BASE_INNER_COLOR
+  }
+
+  if (isPathCell || trackIndex !== undefined) {
     return LUDO_NEUTRAL_CELL_COLOR
   }
 
@@ -1260,8 +1293,10 @@ function getLudoCellStyle({
   if (isBaseInner) {
     return {
       backgroundColor,
-      backgroundImage: 'none',
-      boxShadow: 'none',
+      backgroundImage:
+        'radial-gradient(circle at 35% 28%, rgba(255,255,255,0.72), rgba(216,224,231,0.96) 48%, rgba(173,186,199,0.98) 100%)',
+      boxShadow:
+        'inset 1px 1px 0 rgba(255,255,255,0.72), inset -2px -2px 0 rgba(71,85,105,0.22), inset 0 0 18px rgba(15,23,42,0.12)',
     }
   }
 
@@ -1308,8 +1343,8 @@ function LudoToken({ player, tokenIndex, isMovable, onClick, compact = false }) 
       className={cx(
         'relative inline-flex items-end justify-center bg-transparent transition duration-200',
         compact
-          ? 'h-[clamp(0.82rem,3.4vw,1.48rem)] w-[clamp(0.72rem,3vw,1.18rem)]'
-          : 'h-[clamp(1.05rem,4.6vw,2.05rem)] w-[clamp(0.9rem,4vw,1.65rem)]',
+          ? 'h-[clamp(1rem,4vw,1.75rem)] w-[clamp(0.88rem,3.5vw,1.4rem)]'
+          : 'h-[clamp(1.3rem,5.2vw,2.3rem)] w-[clamp(1.1rem,4.5vw,1.9rem)]',
         isMovable &&
           '-translate-y-0.5 scale-[1.08] animate-[bounce_1.2s_ease-in-out_infinite] drop-shadow-[0_0_16px_rgba(255,255,255,0.22)]',
       )}
@@ -1321,7 +1356,7 @@ function LudoToken({ player, tokenIndex, isMovable, onClick, compact = false }) 
         className="pointer-events-none relative block h-full w-full drop-shadow-[0_7px_7px_rgba(15,23,42,0.42)]"
         style={{
           color: tokenColor,
-          filter: 'saturate(1.35) brightness(1.08)',
+          filter: 'saturate(1.55) brightness(0.94) contrast(1.12)',
         }}
       >
         <span
@@ -1332,19 +1367,19 @@ function LudoToken({ player, tokenIndex, isMovable, onClick, compact = false }) 
           className="absolute left-1/2 top-[1%] h-[72%] w-[74%] -translate-x-1/2 rounded-[55%_55%_55%_55%/62%_62%_42%_42%] border shadow-[inset_0_4px_6px_rgba(255,255,255,0.9),inset_0_-7px_9px_rgba(15,23,42,0.15),0_5px_9px_rgba(15,23,42,0.34)]"
           style={{
             backgroundColor: tokenColor,
-            backgroundImage: `linear-gradient(145deg, rgba(255,255,255,0.98), rgba(255,255,255,0.72) 24%, ${tokenColor} 56%, ${tokenColor} 94%)`,
+            backgroundImage: `linear-gradient(145deg, rgba(255,255,255,0.52), rgba(255,255,255,0.2) 22%, ${tokenColor} 48%, rgba(15,23,42,0.24) 112%)`,
             borderColor: tokenColor,
-            boxShadow: `inset 0 4px 6px rgba(255,255,255,0.9), inset 0 -7px 9px rgba(15,23,42,0.15), 0 5px 9px rgba(15,23,42,0.34), 0 0 10px ${tokenColor}`,
+            boxShadow: `inset 0 4px 6px rgba(255,255,255,0.32), inset 0 -8px 10px rgba(15,23,42,0.34), 0 6px 10px rgba(0,0,0,0.48), 0 0 12px ${tokenColor}`,
             clipPath: 'polygon(50% 100%, 10% 54%, 14% 18%, 50% 0, 86% 18%, 90% 54%)',
           }}
         />
         <span
           className="absolute left-1/2 top-[13%] h-[34%] w-[44%] -translate-x-1/2 rounded-full border shadow-[inset_0_3px_4px_rgba(255,255,255,0.48),inset_0_-4px_5px_rgba(15,23,42,0.18),0_3px_5px_rgba(15,23,42,0.28)]"
           style={{
-            backgroundImage: `radial-gradient(circle at 34% 26%, rgba(255,255,255,0.98), rgba(255,255,255,0.34) 16%, ${tokenColor} 30%, ${tokenColor} 86%, rgba(15,23,42,0.12) 120%)`,
+            backgroundImage: `radial-gradient(circle at 34% 26%, rgba(255,255,255,0.62), rgba(255,255,255,0.18) 16%, ${tokenColor} 34%, rgba(15,23,42,0.16) 120%)`,
             backgroundColor: tokenColor,
             borderColor: tokenColor,
-            boxShadow: `inset 0 3px 4px rgba(255,255,255,0.48), inset 0 -4px 5px rgba(15,23,42,0.18), 0 3px 5px rgba(15,23,42,0.28), 0 0 9px ${tokenColor}`,
+            boxShadow: `inset 0 3px 4px rgba(255,255,255,0.24), inset 0 -4px 5px rgba(15,23,42,0.32), 0 4px 6px rgba(0,0,0,0.4), 0 0 10px ${tokenColor}`,
           }}
         />
       </span>
@@ -1556,7 +1591,10 @@ function LudoBoardEffect({ effect }) {
   )
 }
 
-function LudoGame() {
+function LudoGame({ onBack }) {
+  const [hasStarted, setHasStarted] = useState(false)
+  const [savedGames, setSavedGames] = useState(loadSavedLudoGames)
+  const [saveNotice, setSaveNotice] = useState('')
   const [playerCount, setPlayerCount] = useState(2)
   const [controllerMap, setControllerMap] = useState(LUDO_DEFAULT_CONTROLLERS)
   const [scoreboard, setScoreboard] = useState({
@@ -1985,6 +2023,62 @@ function LudoGame() {
     resetRound(playerCount, nextControllerMap)
   }
 
+  const startConfiguredRound = () => {
+    resetRound(playerCount, controllerMap)
+    setHasStarted(true)
+    setSaveNotice('')
+  }
+
+  const saveCurrentLudoGame = () => {
+    if (rollingPlayerId || animatingMoveKey) {
+      setSaveNotice('Wait for the current move to finish before saving.')
+      return
+    }
+
+    const save = {
+      id: createLudoSaveId(),
+      savedAt: new Date().toISOString(),
+      playerCount,
+      controllerMap,
+      scoreboard,
+      diceValues,
+      gameState,
+    }
+
+    setSavedGames((currentSaves) => {
+      const nextSaves = [save, ...currentSaves].slice(0, LUDO_MAX_SAVES)
+      writeSavedLudoGames(nextSaves)
+      return nextSaves
+    })
+    setSaveNotice('Game saved.')
+  }
+
+  const loadLudoGame = (save) => {
+    clearRollTimers()
+    clearVisualMoveTimers()
+    clearActionEffectTimers()
+    clearCelebrationTimer()
+    setPlayerCount(save.playerCount || 2)
+    setControllerMap(save.controllerMap || LUDO_DEFAULT_CONTROLLERS)
+    setScoreboard(save.scoreboard || { red: 0, blue: 0, yellow: 0, green: 0 })
+    setDiceValues(save.diceValues || createInitialDiceValues())
+    setGameState(save.gameState || createInitialLudoState(save.playerCount || 2, save.controllerMap || LUDO_DEFAULT_CONTROLLERS))
+    setRollingPlayerId(null)
+    setVisualPlayers(null)
+    setAnimatingMoveKey('')
+    setActionEffects([])
+    setMoveFeedback('')
+    setCelebration(null)
+    setSaveNotice('Saved game loaded.')
+    setHasStarted(true)
+  }
+
+  const endLudoGame = () => {
+    resetRound(playerCount, controllerMap)
+    setHasStarted(false)
+    setSaveNotice('')
+  }
+
   const isTokenMovable = (token) =>
     animatingMoveKey === `${token.player.id}-${token.tokenIndex}` ||
     gameState.legalMoves.some(
@@ -2086,9 +2180,143 @@ function LudoGame() {
       })
   }
 
+  const setupPanel = (
+    <div className="rounded-[1.35rem] border border-line bg-[color:var(--portfolio-glass-soft)] p-5 shadow-[var(--portfolio-soft-shadow)]">
+      <div className="flex items-center justify-between gap-4">
+        <p className={cardLabelClassName}>Setup</p>
+        <span className={chipClassName}>Classic rules</span>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-3">
+        {LUDO_PLAYER_COUNT_OPTIONS.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={cx(
+              'rounded-full border px-4 py-2 text-sm font-semibold transition duration-200 hover:-translate-y-0.5',
+              playerCount === option
+                ? 'border-[color:var(--portfolio-glass-border-strong)] bg-[color:var(--portfolio-glass-strong)] text-ink shadow-[var(--portfolio-soft-shadow)]'
+                : 'border-line bg-[color:var(--portfolio-glass-inline)] text-muted hover:border-line-strong hover:bg-[color:var(--portfolio-glass-hover)] hover:text-ink',
+            )}
+            onClick={() => handlePlayerCountChange(option)}
+          >
+            {option} players
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-5 grid gap-3">
+        {activeColorIds.map((playerId) => {
+          const player = LUDO_PLAYER_DEFS[playerId]
+
+          return (
+            <div
+              className={cx(
+                'rounded-[1rem] border px-4 py-3 shadow-[var(--portfolio-soft-shadow)]',
+                player.summaryTone,
+              )}
+              key={`controller-${playerId}`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span
+                    className={cx(
+                      'inline-flex h-9 w-9 items-center justify-center rounded-full border text-xs font-black uppercase shadow-[var(--portfolio-soft-shadow)]',
+                      player.tokenTone,
+                    )}
+                  >
+                    {player.short}
+                  </span>
+                  <div>
+                    <p className="font-medium text-ink">{player.label}</p>
+                    <p className="text-xs text-muted">Human or AI control</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  {['human', 'ai'].map((mode) => (
+                    <button
+                      key={`${playerId}-${mode}`}
+                      type="button"
+                      className={cx(
+                        'rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition duration-200',
+                        controllerMap[playerId] === mode
+                          ? 'border-[color:var(--portfolio-glass-border-strong)] bg-[color:var(--portfolio-glass-strong)] text-ink shadow-[var(--portfolio-soft-shadow)]'
+                          : 'border-line bg-[color:var(--portfolio-glass-inline)] text-muted hover:border-line-strong hover:bg-[color:var(--portfolio-glass-hover)] hover:text-ink',
+                      )}
+                      onClick={() => handleControllerChange(playerId, mode)}
+                    >
+                      {mode === 'ai' ? <Bot size={12} className="inline" /> : null}{' '}
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  if (!hasStarted) {
+    return (
+      <div className="mx-auto grid max-w-2xl gap-5">
+        <div className="rounded-[1.55rem] border border-line bg-[color:var(--portfolio-glass-soft)] p-5 shadow-[var(--portfolio-soft-shadow)]">
+          <p className={cardLabelClassName}>Classic Ludo</p>
+          <h4 className="mt-2 font-display text-[2rem] leading-[1.05] tracking-[-0.04em] text-ink">
+            Choose players before the board opens
+          </h4>
+          <p className="mt-3 text-base leading-8 text-muted">
+            Select number of players, choose Human or AI for every color, then start the round.
+          </p>
+        </div>
+
+        {setupPanel}
+
+        <div className="rounded-[1.35rem] border border-line bg-[color:var(--portfolio-glass-soft)] p-5 shadow-[var(--portfolio-soft-shadow)]">
+          <p className={cardLabelClassName}>Rules</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <span className={chipClassName}>Need 6 to leave base</span>
+            <span className={chipClassName}>Exact roll to reach home</span>
+            <span className={chipClassName}>Safe squares are star marked</span>
+          </div>
+          {savedGames.length ? (
+            <div className="mt-5 border-t border-line pt-5">
+              <p className={cardLabelClassName}>Saved games</p>
+              <div className="mt-3 grid gap-2">
+                {savedGames.map((save, index) => (
+                  <button
+                    key={save.id}
+                    type="button"
+                    className="rounded-[1rem] border border-line bg-[color:var(--portfolio-glass-inline)] px-4 py-3 text-left text-sm font-semibold text-ink shadow-[var(--portfolio-soft-shadow)]"
+                    onClick={() => loadLudoGame(save)}
+                  >
+                    Save {index + 1}
+                    <span className="mt-1 block text-xs font-medium text-muted">
+                      {formatLudoSaveTime(save.savedAt)} | {save.playerCount} players
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {saveNotice ? <p className="mt-4 text-sm font-semibold text-muted">{saveNotice}</p> : null}
+          <button
+            type="button"
+            className={cx(buttonClassNames.primary, 'mt-5 w-full')}
+            onClick={startConfiguredRound}
+          >
+            Start Ludo
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="grid gap-5">
-      <div className="grid gap-3 sm:grid-cols-3">
+    <div className="ludo-started grid gap-5">
+      <div className="ludo-game-info grid gap-3 sm:grid-cols-3">
         <LudoMetric
           hint="Current turn owner"
           label="Active turn"
@@ -2106,9 +2334,9 @@ function LudoGame() {
         />
       </div>
 
-      <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)] 2xl:items-start">
-        <div className="grid gap-4 rounded-[1.55rem] border border-line bg-[color:var(--portfolio-glass-soft)] p-2 shadow-[var(--portfolio-soft-shadow)] sm:p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="ludo-board-stage grid gap-5 2xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)] 2xl:items-start">
+        <div className="ludo-board-card grid gap-4 rounded-[1.55rem] border border-line bg-[color:var(--portfolio-glass-soft)] p-2 shadow-[var(--portfolio-soft-shadow)] sm:p-5">
+          <div className="ludo-board-heading flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div>
               <p className={cardLabelClassName}>Classic Ludo</p>
               <h4 className="mt-2 font-display text-[1.7rem] leading-[1.05] tracking-[-0.04em] text-ink">
@@ -2403,7 +2631,7 @@ function LudoGame() {
           </div>
         </div>
 
-        <div className="grid gap-4">
+        <div className="ludo-game-side-panel grid gap-4">
           <div className="rounded-[1.35rem] border border-line bg-[color:var(--portfolio-glass-soft)] p-5 shadow-[var(--portfolio-soft-shadow)]">
             <div className="flex items-center justify-between gap-4">
               <p className={cardLabelClassName}>Setup</p>
@@ -2560,7 +2788,31 @@ function LudoGame() {
               New round
             </button>
           </div>
+          {saveNotice ? <p className="text-sm font-semibold text-muted">{saveNotice}</p> : null}
         </div>
+      </div>
+      <div className="ludo-quick-nav fixed inset-x-3 bottom-3 z-50 grid grid-cols-3 gap-2 rounded-[1.1rem] border border-line bg-[color:var(--portfolio-glass-strong)] p-2 shadow-[var(--portfolio-strong-shadow)] backdrop-blur-xl sm:hidden">
+        <button
+          type="button"
+          className="rounded-[0.9rem] border border-line bg-[color:var(--portfolio-glass-inline)] px-2 py-3 text-xs font-black uppercase tracking-[0.08em] text-ink"
+          onClick={onBack}
+        >
+          Previous
+        </button>
+        <button
+          type="button"
+          className="rounded-[0.9rem] border border-line bg-[color:var(--portfolio-glass-inline)] px-2 py-3 text-xs font-black uppercase tracking-[0.08em] text-ink"
+          onClick={saveCurrentLudoGame}
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          className="rounded-[0.9rem] border border-line bg-[color:var(--portfolio-glass-inline)] px-2 py-3 text-xs font-black uppercase tracking-[0.08em] text-ink"
+          onClick={endLudoGame}
+        >
+          End
+        </button>
       </div>
     </div>
   )

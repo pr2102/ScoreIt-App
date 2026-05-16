@@ -83,6 +83,8 @@ function createInnings(team, maxOvers, names = {}) {
       { id: 2, name: names.nonStrikerName || 'Batsman 2', runs: 0, balls: 0 },
     ],
     nextBatsman: 3,
+    pendingBatterId: null,
+    pendingBowler: false,
     strikerId: 1,
     bowler: { name: names.bowlerName || 'Bowler 1', legalBalls: 0, runs: 0, wickets: 0 },
   }
@@ -105,6 +107,8 @@ function sanitizeInnings(innings, team, maxOvers) {
     ballProgress: Array.isArray(merged.ballProgress) ? merged.ballProgress : [],
     batsmen: Array.isArray(merged.batsmen) && merged.batsmen.length >= 2 ? merged.batsmen : base.batsmen,
     nextBatsman: Math.max(3, Number(merged.nextBatsman) || 3),
+    pendingBatterId: merged.pendingBatterId ?? null,
+    pendingBowler: Boolean(merged.pendingBowler),
     strikerId: merged.strikerId || base.strikerId,
     bowler: { ...base.bowler, ...(merged.bowler || {}) },
   }
@@ -230,15 +234,19 @@ function rotateStrike(innings) {
 function replaceOutBatter(innings) {
   const index = innings.batsmen.findIndex((player) => player.id === innings.strikerId)
   if (index >= 0 && innings.wickets < 10) {
+    const nextBatterId = innings.nextBatsman
     innings.batsmen[index] = {
-      id: innings.nextBatsman,
-      name: `Batsman ${innings.nextBatsman}`,
+      id: nextBatterId,
+      name: `Batsman ${nextBatterId}`,
       runs: 0,
       balls: 0,
     }
-    innings.strikerId = innings.nextBatsman
+    innings.strikerId = nextBatterId
     innings.nextBatsman += 1
+    return nextBatterId
   }
+
+  return null
 }
 
 function completedMaidens(innings) {
@@ -347,7 +355,8 @@ function applyDelivery(match, action, zone) {
     innings.ballProgress.push({ ball: innings.legalBalls, runs: innings.runs })
 
     if (action.type === 'wicket') {
-      replaceOutBatter(innings)
+      const nextBatterId = replaceOutBatter(innings)
+      if (nextBatterId) innings.pendingBatterId = nextBatterId
     } else if (action.type === 'run' && delivery.runs % 2 === 1) {
       rotateStrike(innings)
     }
@@ -355,6 +364,14 @@ function applyDelivery(match, action, zone) {
     if (innings.legalBalls % 6 === 0) {
       innings.currentOverEvents = []
       rotateStrike(innings)
+      const inningsContinues =
+        innings.legalBalls < innings.maxBalls &&
+        innings.wickets < 10 &&
+        !(next.currentInnings === 1 && innings.runs >= next.target)
+
+      if (inningsContinues) {
+        innings.pendingBowler = true
+      }
     }
   }
 
@@ -557,6 +574,44 @@ function ScoreItApp() {
     })
   }
 
+  const savePendingBatterName = (name) => {
+    setMatch((current) => {
+      const innings = current?.innings?.[current.currentInnings]
+      if (!innings?.pendingBatterId) return current
+
+      const next = clone(current)
+      const nextInnings = next.innings[next.currentInnings]
+      const batter = nextInnings.batsmen.find((player) => player.id === nextInnings.pendingBatterId)
+
+      if (batter) {
+        batter.name = String(name || '').trim() || batter.name
+      }
+
+      nextInnings.pendingBatterId = null
+      return next
+    })
+  }
+
+  const savePendingBowlerName = (name) => {
+    setMatch((current) => {
+      const innings = current?.innings?.[current.currentInnings]
+      if (!innings?.pendingBowler) return current
+
+      const next = clone(current)
+      const nextInnings = next.innings[next.currentInnings]
+      const fallbackName = `Bowler ${Math.floor(nextInnings.legalBalls / 6) + 1}`
+
+      nextInnings.bowler = {
+        name: String(name || '').trim() || fallbackName,
+        legalBalls: 0,
+        runs: 0,
+        wickets: 0,
+      }
+      nextInnings.pendingBowler = false
+      return next
+    })
+  }
+
   const share = async () => {
     const text = shareText(match, summary)
     try {
@@ -602,6 +657,8 @@ function ScoreItApp() {
         onScore={score}
         onUndo={undo}
         onRotate={manualRotate}
+        onSaveBatterName={savePendingBatterName}
+        onSaveBowlerName={savePendingBowlerName}
         onShare={share}
         onNewMatch={returnToSetup}
         shareState={shareState}
