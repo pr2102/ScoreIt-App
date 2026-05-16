@@ -36,8 +36,10 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Copy Capacitor Web Assets
-        run: npx cap copy android
+      - name: Copy Web Assets to Android
+        run: |
+          mkdir -p android/app/src/main/assets/public
+          cp -R dist/. android/app/src/main/assets/public/
 
       - name: Build Android Debug APK
         run: |
