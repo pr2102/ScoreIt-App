@@ -43,7 +43,7 @@ function Ball({ children, tone = 'green' }) {
             : tone === 'red'
               ? 'bg-gradient-to-b from-red-400 to-red-900'
               : 'bg-gradient-to-b from-green-400 to-green-800'
-      }`}
+      } scoreit-score-orb`}
     >
       {children}
     </span>
@@ -62,7 +62,7 @@ function PlayerTable({ innings }) {
   const striker = innings.batsmen.find((player) => player.id === innings.strikerId)
   const rows = innings.batsmen.slice(0, 2)
   return (
-    <div className="rounded-3xl bg-white p-5 shadow-md shadow-slate-200">
+    <div className="scoreit-live-card rounded-3xl bg-white p-5 shadow-md shadow-slate-200">
       <div className="mb-5 grid grid-cols-[1fr_52px] rounded-2xl bg-slate-100 p-4">
         <div>
           <p className="text-xl font-black">{innings.team}, 1st inning</p>
@@ -128,7 +128,7 @@ function ScoreboardView({ match }) {
   const [first, second] = match.innings
   return (
     <section className="space-y-7 px-5 py-7">
-      <div className="relative grid grid-cols-2 overflow-hidden bg-slate-100">
+      <div className="scoreit-live-card relative grid grid-cols-2 overflow-hidden bg-slate-100">
         <div className="bg-pink-100/70 p-8 text-center">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-fuchsia-700 text-3xl font-medium text-white">
             {match.setup.team1.slice(0, 1).toUpperCase()}
@@ -174,7 +174,7 @@ function OversView({ match }) {
           overRows.set(delivery.overIndex, row)
         })
         return (
-          <div key={innings.team} className="mb-7 overflow-hidden rounded-2xl bg-slate-50 shadow">
+          <div key={innings.team} className="scoreit-live-card mb-7 overflow-hidden rounded-2xl bg-slate-50 shadow">
             <h2 className="bg-[#3954b4] px-5 py-4 text-2xl font-medium text-white">
               {inningsIndex + 1}{inningsIndex === 0 ? 'st' : 'nd'} Inning
             </h2>
@@ -242,7 +242,7 @@ export default function Dashboard({
         <section className="space-y-6 px-5 py-5">
           <PlayerTable innings={innings} />
 
-          <div className="flex items-center gap-4 rounded-3xl bg-slate-100 p-5">
+          <div className="scoreit-live-card flex items-center gap-4 rounded-3xl bg-slate-100 p-5">
             <span className="text-xl text-slate-600">This over</span>
             <div className="flex flex-wrap gap-3">
               {thisOver.length ? (
@@ -253,7 +253,7 @@ export default function Dashboard({
             </div>
           </div>
 
-          <div className="rounded-3xl bg-slate-100 p-5">
+          <div className="scoreit-live-card rounded-3xl bg-slate-100 p-5">
             <div className="grid grid-cols-5 gap-5">
               {[0, 1, 2].map((run) => (
                 <ScoreCircle key={run} disabled={!canScore} onClick={() => onScore({ type: 'run', runs: run })}>

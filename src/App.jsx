@@ -1,4 +1,5 @@
 import { Component, useEffect, useMemo, useState } from 'react'
+import { Moon, Sun } from 'lucide-react'
 import Dashboard from './components/Dashboard'
 import MatchSetup from './components/MatchSetup'
 import MatchResult from './components/MatchResult'
@@ -486,6 +487,7 @@ function ScoreItApp() {
   const [zone, setZone] = useState('Off-side')
   const [declaredRuns, setDeclaredRuns] = useState('5')
   const [shareState, setShareState] = useState('idle')
+  const [theme, setTheme] = useState(() => localStorage.getItem('scoreit-theme') || 'dark')
 
   const innings = match?.innings[match.currentInnings]
   const summary = useMemo(() => (match ? buildSummary(match) : null), [match])
@@ -500,6 +502,10 @@ function ScoreItApp() {
 
     return () => window.clearTimeout(saveTimer)
   }, [match])
+
+  useEffect(() => {
+    localStorage.setItem('scoreit-theme', theme)
+  }, [theme])
 
   const start = (nextSetup = setup) => {
     setSetup(nextSetup)
@@ -561,8 +567,10 @@ function ScoreItApp() {
     }
   }
 
+  let content
+
   if (!match) {
-    return (
+    content = (
       <MatchSetup
         setup={setup}
         onSetupChange={setSetup}
@@ -572,10 +580,8 @@ function ScoreItApp() {
         onDeleteMatch={deleteStoredMatch}
       />
     )
-  }
-
-  if (match.status === 'complete') {
-    return (
+  } else if (match.status === 'complete') {
+    content = (
       <MatchResult
         match={match}
         analytics={analytics}
@@ -584,20 +590,35 @@ function ScoreItApp() {
         shareState={shareState}
       />
     )
+  } else {
+    content = (
+      <Dashboard
+        match={match}
+        innings={innings}
+        summary={summary}
+        controls={{ zone, setZone, declaredRuns, setDeclaredRuns }}
+        onScore={score}
+        onUndo={undo}
+        onRotate={manualRotate}
+        onShare={share}
+        onNewMatch={returnToSetup}
+        shareState={shareState}
+      />
+    )
   }
 
   return (
-    <Dashboard
-      match={match}
-      innings={innings}
-      summary={summary}
-      controls={{ zone, setZone, declaredRuns, setDeclaredRuns }}
-      onScore={score}
-      onUndo={undo}
-      onRotate={manualRotate}
-      onShare={share}
-      onNewMatch={returnToSetup}
-      shareState={shareState}
-    />
+    <div className="scoreit-theme" data-theme={theme}>
+      <button
+        type="button"
+        onClick={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
+        className="scoreit-theme-toggle"
+        aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      >
+        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+        <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+      </button>
+      {content}
+    </div>
   )
 }
