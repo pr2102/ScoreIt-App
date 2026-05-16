@@ -2791,6 +2791,14 @@ function LudoGame({ onBack }) {
           {saveNotice ? <p className="text-sm font-semibold text-muted">{saveNotice}</p> : null}
         </div>
       </div>
+      {saveNotice ? (
+        <div
+          aria-live="polite"
+          className="fixed inset-x-5 bottom-24 z-50 rounded-[1rem] border border-emerald-300/35 bg-emerald-400/18 px-4 py-3 text-center text-sm font-black text-ink shadow-[var(--portfolio-strong-shadow)] backdrop-blur-xl sm:hidden"
+        >
+          {saveNotice}
+        </div>
+      ) : null}
       <div className="ludo-quick-nav fixed inset-x-3 bottom-3 z-50 grid grid-cols-3 gap-2 rounded-[1.1rem] border border-line bg-[color:var(--portfolio-glass-strong)] p-2 shadow-[var(--portfolio-strong-shadow)] backdrop-blur-xl sm:hidden">
         <button
           type="button"
