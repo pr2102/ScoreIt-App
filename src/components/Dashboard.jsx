@@ -1,57 +1,200 @@
-import {
-  Clipboard,
-  RotateCcw,
-  Share2,
-  Shield,
-  Sparkles,
-  Timer,
-  Undo2,
-  Users,
-} from 'lucide-react'
+import { useState } from 'react'
+import { ChevronLeft, Edit3, MoreVertical } from 'lucide-react'
 
-const zones = ['Off-side', 'Leg-side', 'Straight', 'Behind']
-
-function Stat({ label, value, tone = 'text-white' }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-3">
-      <p className="text-[0.68rem] font-bold uppercase tracking-widest text-slate-500">
-        {label}
-      </p>
-      <p className={`mt-1 text-xl font-black ${tone}`}>{value}</p>
-    </div>
-  )
+function ballsToOvers(balls) {
+  return `${Math.floor(balls / 6)}.${balls % 6}`
 }
 
-function PlayerRow({ player, active }) {
-  return (
-    <div
-      className={`flex items-center justify-between rounded-2xl border p-3 ${
-        active
-          ? 'border-emerald-300/50 bg-emerald-300/10'
-          : 'border-white/10 bg-white/[0.04]'
-      }`}
-    >
-      <div>
-        <p className="font-bold text-slate-100">
-          {player.name} {active ? <span className="text-emerald-300">*</span> : null}
-        </p>
-        <p className="text-xs text-slate-400">R {player.runs} · B {player.balls}</p>
-      </div>
-      <Users className={active ? 'text-emerald-300' : 'text-slate-500'} size={19} />
-    </div>
-  )
+function rate(runs, balls) {
+  return balls ? ((runs * 6) / balls).toFixed(1) : '0.0'
 }
 
-function ScoreButton({ children, onClick, disabled, className = '' }) {
+function batterStats(player, deliveries) {
+  const playerBalls = deliveries.filter((delivery) => delivery.type === 'run')
+  return {
+    fours: playerBalls.filter((delivery) => delivery.batRuns === 4).length,
+    sixes: playerBalls.filter((delivery) => delivery.batRuns === 6).length,
+    sr: player.balls ? ((player.runs * 100) / player.balls).toFixed(1) : '0.0',
+  }
+}
+
+function TabButton({ active, children, onClick }) {
   return (
     <button
       type="button"
-      disabled={disabled}
       onClick={onClick}
-      className={`min-h-14 rounded-2xl border border-white/10 bg-white/[0.06] px-3 text-base font-black text-slate-100 shadow-lg shadow-black/10 transition hover:border-emerald-300/50 hover:bg-emerald-300/10 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+      className={`h-14 rounded-full text-lg font-medium transition ${
+        active ? 'bg-yellow-300 text-slate-700' : 'bg-white text-[#3954b4]'
+      }`}
     >
       {children}
     </button>
+  )
+}
+
+function Ball({ children, tone = 'green' }) {
+  return (
+    <span
+      className={`flex h-12 w-12 items-center justify-center rounded-full text-lg font-medium text-white shadow-md ${
+        tone === 'yellow'
+          ? 'bg-gradient-to-b from-yellow-200 to-yellow-500 text-[#3954b4]'
+          : tone === 'blue'
+            ? 'bg-gradient-to-b from-blue-300 to-[#3954b4]'
+            : tone === 'red'
+              ? 'bg-gradient-to-b from-red-400 to-red-900'
+              : 'bg-gradient-to-b from-green-400 to-green-800'
+      }`}
+    >
+      {children}
+    </span>
+  )
+}
+
+function ScoreCircle({ children, tone, disabled, onClick }) {
+  return (
+    <button type="button" disabled={disabled} onClick={onClick} className="disabled:opacity-40">
+      <Ball tone={tone}>{children}</Ball>
+    </button>
+  )
+}
+
+function PlayerTable({ innings }) {
+  const striker = innings.batsmen.find((player) => player.id === innings.strikerId)
+  const rows = innings.batsmen.slice(0, 2)
+  return (
+    <div className="rounded-3xl bg-white p-5 shadow-md shadow-slate-200">
+      <div className="mb-5 grid grid-cols-[1fr_52px] rounded-2xl bg-slate-100 p-4">
+        <div>
+          <p className="text-xl font-black">{innings.team}, 1st inning</p>
+          <p className="text-2xl font-medium text-slate-600">
+            {innings.runs}/{innings.wickets} ({ballsToOvers(innings.legalBalls)})
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-xl font-black">CRR</p>
+          <p className="text-2xl font-medium text-slate-600">{rate(innings.runs, innings.legalBalls)}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[1fr_44px_44px_44px_44px_64px] border-b border-slate-400 pb-3 text-xl font-black text-slate-600">
+        <span>Batsman</span>
+        <span>R</span>
+        <span>B</span>
+        <span>4s</span>
+        <span>6s</span>
+        <span>SR</span>
+      </div>
+      {rows.map((player) => {
+        const stats = batterStats(player, innings.deliveries)
+        return (
+          <div
+            key={player.id}
+            className="grid grid-cols-[1fr_44px_44px_44px_44px_64px] py-3 text-lg text-slate-600"
+          >
+            <span className={player.id === striker?.id ? 'font-black text-[#3954b4]' : ''}>
+              {player.name}
+              {player.id === striker?.id ? '*' : ''}
+            </span>
+            <span>{player.runs}</span>
+            <span>{player.balls}</span>
+            <span>{stats.fours}</span>
+            <span>{stats.sixes}</span>
+            <span>{stats.sr}</span>
+          </div>
+        )
+      })}
+
+      <div className="mt-4 grid grid-cols-[1fr_44px_44px_44px_44px_64px] border-b border-slate-400 pb-3 text-xl font-black text-slate-600">
+        <span>Bowler</span>
+        <span>O</span>
+        <span>M</span>
+        <span>R</span>
+        <span>W</span>
+        <span>ECO</span>
+      </div>
+      <div className="grid grid-cols-[1fr_44px_44px_44px_44px_64px] py-3 text-lg text-slate-600">
+        <span>{innings.bowler.name}</span>
+        <span>{ballsToOvers(innings.bowler.legalBalls)}</span>
+        <span>0</span>
+        <span>{innings.bowler.runs}</span>
+        <span>{innings.bowler.wickets}</span>
+        <span>{rate(innings.bowler.runs, innings.bowler.legalBalls)}</span>
+      </div>
+    </div>
+  )
+}
+
+function ScoreboardView({ match }) {
+  const [first, second] = match.innings
+  return (
+    <section className="space-y-7 px-5 py-7">
+      <div className="relative grid grid-cols-2 overflow-hidden bg-slate-100">
+        <div className="bg-pink-100/70 p-8 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-fuchsia-700 text-3xl font-medium text-white">
+            {match.setup.team1.slice(0, 1).toUpperCase()}
+          </div>
+          <p className="mt-4 text-3xl font-black">{first.runs}/{first.wickets}</p>
+          <p className="mt-1 text-slate-500">{ballsToOvers(first.legalBalls)} ov</p>
+          <p className="mt-2 font-black uppercase tracking-widest text-slate-400">{first.team}</p>
+        </div>
+        <div className="bg-rose-100/70 p-8 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-rose-700 text-3xl font-medium text-white">
+            {match.setup.team2.slice(0, 1).toUpperCase()}
+          </div>
+          <p className="mt-4 text-3xl font-black">{second.runs}/{second.wickets}</p>
+          <p className="mt-1 text-slate-500">{ballsToOvers(second.legalBalls)} ov</p>
+          <p className="mt-2 font-black uppercase tracking-widest text-slate-400">{second.team}</p>
+        </div>
+        <span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-8 border-white bg-yellow-300 text-xl font-black">
+          vs
+        </span>
+      </div>
+      <PlayerTable innings={first} />
+      {second.legalBalls || second.runs ? <PlayerTable innings={second} /> : null}
+      <div className="grid grid-cols-2 gap-4">
+        <button className="h-16 rounded-xl bg-yellow-300 text-lg font-medium text-[#3954b4]">
+          Download Scorecard
+        </button>
+        <button className="h-16 rounded-xl bg-yellow-300 text-lg font-medium text-[#3954b4]">
+          View Analytics
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function OversView({ match }) {
+  return (
+    <section className="px-5 py-8">
+      {match.innings.map((innings, inningsIndex) => {
+        const overRows = new Map()
+        innings.deliveries.forEach((delivery) => {
+          const row = overRows.get(delivery.overIndex) || []
+          row.push(delivery)
+          overRows.set(delivery.overIndex, row)
+        })
+        return (
+          <div key={innings.team} className="mb-7 overflow-hidden rounded-2xl bg-slate-50 shadow">
+            <h2 className="bg-[#3954b4] px-5 py-4 text-2xl font-medium text-white">
+              {inningsIndex + 1}{inningsIndex === 0 ? 'st' : 'nd'} Inning
+            </h2>
+            {[...overRows.entries()].map(([over, deliveries]) => (
+              <div key={over} className="border-b border-slate-200 p-5">
+                <p className="text-xl text-slate-500">Over {over + 1}</p>
+                <div className="mt-4 flex items-center gap-3">
+                  <p className="mr-2 text-2xl font-medium text-slate-600">
+                    {deliveries.reduce((sum, delivery) => sum + delivery.runs, 0)} Runs
+                  </p>
+                  {deliveries.map((delivery, index) => (
+                    <Ball key={`${delivery.label}-${index}`}>{delivery.label}</Ball>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      })}
+    </section>
   )
 }
 
@@ -59,209 +202,104 @@ export default function Dashboard({
   match,
   innings,
   summary,
-  controls,
   onScore,
   onUndo,
   onRotate,
-  onShare,
-  shareState,
+  onNewMatch,
 }) {
-  const striker = innings.batsmen.find((player) => player.id === innings.strikerId)
-  const nonStriker = innings.batsmen.find((player) => player.id !== innings.strikerId)
+  const [tab, setTab] = useState('Live Score')
   const canScore = match.status === 'live'
+  const thisOver = innings.currentOverEvents
 
   return (
-    <section className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-      <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/80 p-4 shadow-xl shadow-black/20">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-300">
-              Innings {match.currentInnings + 1}
-            </p>
-            <h2 className="mt-1 text-2xl font-black text-white">{innings.team}</h2>
-            <p className="text-sm text-slate-400">
-              {match.status === 'complete' ? match.result : 'Live scoring dashboard'}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onShare}
-            className="inline-flex items-center gap-2 rounded-2xl border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20"
-          >
-            {shareState === 'copied' ? <Clipboard size={17} /> : <Share2 size={17} />}
-            {shareState === 'copied' ? 'Copied' : 'Share'}
+    <main className="min-h-svh bg-white text-slate-800">
+      <header className="bg-[#3954b4] px-5 pb-8 pt-12 text-white">
+        <div className="mb-8 flex items-center justify-between">
+          <button onClick={onNewMatch} className="flex h-10 w-10 items-center justify-center" type="button">
+            <ChevronLeft size={34} />
           </button>
-        </div>
-
-        <div className="mt-5 rounded-[1.5rem] border border-emerald-300/20 bg-gradient-to-br from-emerald-300/14 to-white/[0.04] p-5">
-          <p className="text-sm font-bold uppercase tracking-widest text-slate-400">
-            Current Score
-          </p>
-          <div className="mt-2 flex items-end gap-3">
-            <p className="text-6xl font-black leading-none text-white">
-              {innings.runs}/{innings.wickets}
-            </p>
-            <p className="pb-2 text-sm font-bold text-slate-400">({summary.overs})</p>
+          <h1 className="text-3xl font-medium">
+            {match.setup.team1} v/s {match.setup.team2}
+          </h1>
+          <div className="flex gap-5">
+            <Edit3 size={28} />
+            <MoreVertical size={30} />
           </div>
         </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat label="Target" value={summary.target || '-'} tone="text-amber-200" />
-          <Stat label="CRR" value={summary.crr} tone="text-emerald-200" />
-          <Stat label="RRR" value={summary.rrr || '-'} tone="text-lime-200" />
-          <Stat label="To Win" value={summary.toWin || '-'} tone="text-white" />
+        <div className="grid grid-cols-3 gap-2">
+          {['Live Score', 'Scoreboard', 'Overs'].map((item) => (
+            <TabButton key={item} active={tab === item} onClick={() => setTab(item)}>
+              {item}
+            </TabButton>
+          ))}
         </div>
+      </header>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-200">
-            <Timer size={17} className="text-emerald-300" />
-            Current Over
-          </div>
-          <div className="flex min-h-12 flex-wrap items-center gap-2">
-            {innings.currentOverEvents.length ? (
-              innings.currentOverEvents.map((event, index) => (
-                <span
-                  key={`${event.label}-${index}`}
-                  className="flex h-10 min-w-10 items-center justify-center rounded-full border border-white/10 bg-slate-900 px-3 text-sm font-black text-slate-100"
-                >
-                  {event.label}
-                </span>
-              ))
-            ) : (
-              <span className="text-sm text-slate-500">No deliveries yet</span>
-            )}
-          </div>
-        </div>
+      {tab === 'Scoreboard' ? <ScoreboardView match={match} /> : null}
+      {tab === 'Overs' ? <OversView match={match} /> : null}
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-bold text-slate-200">Active Batsmen</p>
-              <button
-                type="button"
-                onClick={onRotate}
-                disabled={!canScore}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-xs font-bold text-slate-200 transition hover:border-emerald-300/50 disabled:opacity-40"
-              >
-                <RotateCcw size={14} />
-                Rotate
-              </button>
-            </div>
-            {striker ? <PlayerRow player={striker} active /> : null}
-            {nonStriker ? <PlayerRow player={nonStriker} /> : null}
-          </div>
+      {tab === 'Live Score' ? (
+        <section className="space-y-6 px-5 py-5">
+          <PlayerTable innings={innings} />
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-            <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-200">
-              <Shield size={17} className="text-amber-300" />
-              Active Bowler
-            </div>
-            <p className="text-lg font-black text-white">{innings.bowler.name}</p>
-            <div className="mt-3 grid grid-cols-4 gap-2 text-center">
-              <Stat label="O" value={summary.bowlerOvers} />
-              <Stat label="M" value={summary.maidens} />
-              <Stat label="R" value={innings.bowler.runs} />
-              <Stat label="W" value={innings.bowler.wickets} />
+          <div className="flex items-center gap-4 rounded-3xl bg-slate-100 p-5">
+            <span className="text-xl text-slate-600">This over</span>
+            <div className="flex flex-wrap gap-3">
+              {thisOver.length ? (
+                thisOver.map((event, index) => <Ball key={`${event.label}-${index}`}>{event.label}</Ball>)
+              ) : (
+                <span className="text-slate-400">No balls yet</span>
+              )}
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/80 p-4 shadow-xl shadow-black/20">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-300">
-              Scoring
-            </p>
-            <h2 className="text-xl font-black text-white">Ball Controls</h2>
-          </div>
-          <button
-            type="button"
-            onClick={onUndo}
-            disabled={!match.history.length}
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-bold text-slate-200 transition hover:border-amber-300/50 disabled:opacity-40"
-          >
-            <Undo2 size={17} />
-            Undo
-          </button>
-        </div>
-
-        <div className="mb-4 grid grid-cols-2 gap-3">
-          <label className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
-              Shot Zone
-            </span>
-            <select
-              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-slate-100 outline-none focus:border-emerald-300/70"
-              value={controls.zone}
-              onChange={(event) => controls.setZone(event.target.value)}
-            >
-              {zones.map((zone) => (
-                <option key={zone}>{zone}</option>
+          <div className="rounded-3xl bg-slate-100 p-5">
+            <div className="grid grid-cols-5 gap-5">
+              {[0, 1, 2].map((run) => (
+                <ScoreCircle key={run} disabled={!canScore} onClick={() => onScore({ type: 'run', runs: run })}>
+                  {run}
+                </ScoreCircle>
               ))}
-            </select>
-          </label>
-          <label className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
-              Declared
-            </span>
-            <input
-              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-slate-100 outline-none focus:border-emerald-300/70"
-              type="number"
-              min="1"
-              value={controls.declaredRuns}
-              onChange={(event) => controls.setDeclaredRuns(event.target.value)}
-            />
-          </label>
-        </div>
+              <ScoreCircle disabled={!canScore} onClick={() => onScore({ type: 'run', runs: 5 })}>
+                More
+              </ScoreCircle>
+              <ScoreCircle tone="yellow" disabled={!match.history.length} onClick={onUndo}>
+                UNDO
+              </ScoreCircle>
+              {[3, 4, 6].map((run) => (
+                <ScoreCircle key={run} disabled={!canScore} onClick={() => onScore({ type: 'run', runs: run })}>
+                  {run}
+                </ScoreCircle>
+              ))}
+              <ScoreCircle disabled={!canScore} onClick={() => onScore({ type: 'run', runs: 7 })}>
+                5,7 OTH
+              </ScoreCircle>
+              <ScoreCircle tone="yellow" disabled={!canScore} onClick={onRotate}>
+                SWAP
+              </ScoreCircle>
+              <ScoreCircle tone="blue" disabled={!canScore || !match.setup.widesEnabled} onClick={() => onScore({ type: 'wide' })}>
+                WD
+              </ScoreCircle>
+              <ScoreCircle tone="blue" disabled={!canScore || !match.setup.noBallsEnabled} onClick={() => onScore({ type: 'noBall' })}>
+                NB
+              </ScoreCircle>
+              <ScoreCircle tone="blue" disabled={!canScore} onClick={() => onScore({ type: 'declared', runs: 1 })}>
+                LB
+              </ScoreCircle>
+              <ScoreCircle tone="blue" disabled={!canScore} onClick={() => onScore({ type: 'declared', runs: 1 })}>
+                BYE
+              </ScoreCircle>
+              <ScoreCircle tone="red" disabled={!canScore} onClick={() => onScore({ type: 'wicket' })}>
+                OUT
+              </ScoreCircle>
+            </div>
+          </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          {[0, 1, 2, 3, 4, 6].map((run) => (
-            <ScoreButton key={run} disabled={!canScore} onClick={() => onScore({ type: 'run', runs: run })}>
-              {run}
-            </ScoreButton>
-          ))}
-          {match.setup.customBoundaries.map((run) => (
-            <ScoreButton
-              key={run}
-              disabled={!canScore}
-              onClick={() => onScore({ type: 'run', runs: run })}
-              className="border-amber-300/25 bg-amber-300/10 text-amber-100"
-            >
-              {run}
-            </ScoreButton>
-          ))}
-          <ScoreButton
-            disabled={!canScore || !match.setup.widesEnabled}
-            onClick={() => onScore({ type: 'wide' })}
-          >
-            Wd
-          </ScoreButton>
-          <ScoreButton
-            disabled={!canScore || !match.setup.noBallsEnabled}
-            onClick={() => onScore({ type: 'noBall' })}
-          >
-            Nb
-          </ScoreButton>
-          <ScoreButton
-            disabled={!canScore}
-            onClick={() => onScore({ type: 'wicket' })}
-            className="border-rose-300/25 bg-rose-400/10 text-rose-100"
-          >
-            W
-          </ScoreButton>
-          <ScoreButton
-            disabled={!canScore || !match.setup.declaredNoStrike}
-            onClick={() => onScore({ type: 'declared', runs: Number(controls.declaredRuns) || 1 })}
-            className="col-span-2 border-emerald-300/25 bg-emerald-300/10 text-emerald-100"
-          >
-            <span className="inline-flex items-center justify-center gap-2">
-              <Sparkles size={17} />
-              Declared
-            </span>
-          </ScoreButton>
-        </div>
-      </div>
-    </section>
+          <p className="text-center text-sm font-medium text-slate-400">
+            Overs {summary.overs} · CRR {summary.crr}
+          </p>
+        </section>
+      ) : null}
+    </main>
   )
 }

@@ -1,6 +1,4 @@
 import { Component, useEffect, useMemo, useState } from 'react'
-import { Trophy } from 'lucide-react'
-import Analytics from './components/Analytics'
 import Dashboard from './components/Dashboard'
 import MatchSetup from './components/MatchSetup'
 import MatchResult from './components/MatchResult'
@@ -11,12 +9,22 @@ const MAX_STORED_MATCHES = 200
 const initialSetup = {
   team1: 'Emerald Strikers',
   team2: 'Golden Royals',
-  overs: '5',
+  overs: '20',
+  playersPerSide: '11',
+  matchType: 'Limited Overs',
+  pitchType: 'Ground Cricket',
   widesEnabled: true,
   noBallsEnabled: true,
+  wideRuns: '1',
+  noBallRuns: '1',
   declaredNoStrike: true,
   boundaryA: '12',
   boundaryB: '24',
+  tossWinner: 'Emerald Strikers',
+  electedTo: 'Bat',
+  strikerName: 'Batsman 1',
+  nonStrikerName: 'Batsman 2',
+  bowlerName: 'Bowler 1',
 }
 
 class ScoreItErrorBoundary extends Component {
@@ -58,7 +66,7 @@ const createId = () =>
   globalThis.crypto?.randomUUID?.() ??
   `match-${Date.now()}-${Math.random().toString(16).slice(2)}`
 
-function createInnings(team, maxOvers) {
+function createInnings(team, maxOvers, names = {}) {
   return {
     team,
     runs: 0,
@@ -70,12 +78,12 @@ function createInnings(team, maxOvers) {
     wagonShots: [],
     ballProgress: [],
     batsmen: [
-      { id: 1, name: 'Batsman 1', runs: 0, balls: 0 },
-      { id: 2, name: 'Batsman 2', runs: 0, balls: 0 },
+      { id: 1, name: names.strikerName || 'Batsman 1', runs: 0, balls: 0 },
+      { id: 2, name: names.nonStrikerName || 'Batsman 2', runs: 0, balls: 0 },
     ],
     nextBatsman: 3,
     strikerId: 1,
-    bowler: { name: 'Bowler 1', legalBalls: 0, runs: 0, wickets: 0 },
+    bowler: { name: names.bowlerName || 'Bowler 1', legalBalls: 0, runs: 0, wickets: 0 },
   }
 }
 
@@ -112,6 +120,9 @@ function normalizeSetup(setup) {
     team1: String(safeSetup.team1 || 'Team 1').trim() || 'Team 1',
     team2: String(safeSetup.team2 || 'Team 2').trim() || 'Team 2',
     overs: Math.max(1, Number(safeSetup.overs) || 1),
+    playersPerSide: Math.max(2, Number(safeSetup.playersPerSide) || 11),
+    wideRuns: Math.max(0, Number(safeSetup.wideRuns) || 0),
+    noBallRuns: Math.max(0, Number(safeSetup.noBallRuns) || 0),
     customBoundaries: [...new Set(customBoundaries)],
   }
 }
@@ -119,13 +130,20 @@ function normalizeSetup(setup) {
 function startMatch(setup) {
   const rules = normalizeSetup(setup)
   const now = new Date().toISOString()
+  const tossWinner = rules.tossWinner === rules.team2 ? rules.team2 : rules.team1
+  const otherTeam = tossWinner === rules.team1 ? rules.team2 : rules.team1
+  const battingFirst = rules.electedTo === 'Bowl' ? otherTeam : tossWinner
+  const battingSecond = battingFirst === rules.team1 ? rules.team2 : rules.team1
 
   return {
     id: createId(),
     createdAt: now,
     updatedAt: now,
     setup: rules,
-    innings: [createInnings(rules.team1, rules.overs), createInnings(rules.team2, rules.overs)],
+    innings: [
+      createInnings(battingFirst, rules.overs, rules),
+      createInnings(battingSecond, rules.overs),
+    ],
     currentInnings: 0,
     target: null,
     status: 'live',
@@ -286,15 +304,15 @@ function applyDelivery(match, action, zone) {
   }
 
   if (action.type === 'wide') {
-    delivery.runs = 1
-    delivery.extraRuns = 1
-    delivery.bowlerRuns = 1
+    delivery.runs = Number(next.setup.wideRuns) || 0
+    delivery.extraRuns = delivery.runs
+    delivery.bowlerRuns = delivery.runs
     delivery.legal = false
     delivery.label = 'Wd'
   } else if (action.type === 'noBall') {
-    delivery.runs = 1
-    delivery.extraRuns = 1
-    delivery.bowlerRuns = 1
+    delivery.runs = Number(next.setup.noBallRuns) || 0
+    delivery.extraRuns = delivery.runs
+    delivery.bowlerRuns = delivery.runs
     delivery.legal = false
     delivery.label = 'Nb'
   } else if (action.type === 'wicket') {
@@ -483,7 +501,10 @@ function ScoreItApp() {
     return () => window.clearTimeout(saveTimer)
   }, [match])
 
-  const start = () => setMatch(startMatch(setup))
+  const start = (nextSetup = setup) => {
+    setSetup(nextSetup)
+    setMatch(startMatch(nextSetup))
+  }
 
   const returnToSetup = () => {
     setStoredMatches(loadStoredMatches())
@@ -566,44 +587,17 @@ function ScoreItApp() {
   }
 
   return (
-    <main className="min-h-svh bg-slate-950 px-3 py-4 text-slate-100 sm:px-5 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-4">
-        <header className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-300 text-slate-950">
-              <Trophy size={25} />
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-300">
-                ScoreIt
-              </p>
-              <h1 className="text-xl font-black text-white sm:text-2xl">
-                {match.setup.team1} vs {match.setup.team2}
-              </h1>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={returnToSetup}
-            className="rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-bold text-slate-200 transition hover:border-amber-300/50"
-          >
-            New Match
-          </button>
-        </header>
-
-        <Dashboard
-          match={match}
-          innings={innings}
-          summary={summary}
-          controls={{ zone, setZone, declaredRuns, setDeclaredRuns }}
-          onScore={score}
-          onUndo={undo}
-          onRotate={manualRotate}
-          onShare={share}
-          shareState={shareState}
-        />
-        <Analytics analytics={analytics} />
-      </div>
-    </main>
+    <Dashboard
+      match={match}
+      innings={innings}
+      summary={summary}
+      controls={{ zone, setZone, declaredRuns, setDeclaredRuns }}
+      onScore={score}
+      onUndo={undo}
+      onRotate={manualRotate}
+      onShare={share}
+      onNewMatch={returnToSetup}
+      shareState={shareState}
+    />
   )
 }
