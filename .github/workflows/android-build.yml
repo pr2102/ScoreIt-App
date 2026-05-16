@@ -31,14 +31,19 @@ jobs:
           java-version: 17
           cache: gradle
 
-      - name: Sync Capacitor to Android
-        run: npx cap sync android
+      - name: Install Android SDK Packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Copy Capacitor Web Assets
+        run: npx cap copy android
 
       - name: Build Android Debug APK
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
