@@ -52,7 +52,7 @@ function Ball({ children, tone = 'green' }) {
 
 function ScoreCircle({ children, tone, disabled, onClick }) {
   return (
-    <button type="button" disabled={disabled} onClick={onClick} className="disabled:opacity-40">
+    <button type="button" disabled={disabled} onClick={onClick} className="scoreit-score-button disabled:opacity-40">
       <Ball tone={tone}>{children}</Ball>
     </button>
   )
@@ -296,7 +296,7 @@ export default function Dashboard({
           </div>
 
           <p className="text-center text-sm font-medium text-slate-400">
-            Overs {summary.overs} · CRR {summary.crr}
+            Overs {summary.overs} | CRR {summary.crr}
           </p>
         </section>
       ) : null}

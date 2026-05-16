@@ -1,46 +1,61 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  BarChart3,
+  Activity,
   ChevronLeft,
   Database,
-  Home,
-  Info,
+  Gamepad2,
   Minus,
   Play,
   Plus,
   Smartphone,
+  Sparkles,
+  Target,
   Trash2,
   Trophy,
   User,
   Users,
   WifiOff,
 } from 'lucide-react'
+import TimePassGames from './TimePassGames'
 
 function Stepper({ step }) {
+  const steps = [
+    { id: 1, label: 'Rules', caption: 'Teams & format' },
+    { id: 2, label: 'Toss', caption: 'Coin & decision' },
+  ]
+
   return (
-    <div className="px-5 pb-6 pt-4 sm:px-7 sm:pb-8 sm:pt-5">
-      <div className="relative flex items-center justify-between">
-        <div className="absolute left-0 right-0 top-7 h-1 rounded-full bg-white/25" />
-        <div
-          className="absolute left-0 top-7 h-1 rounded-full bg-yellow-300 transition-all"
-          style={{ width: step === 1 ? '24%' : '100%' }}
-        />
-        {[1, 2].map((item) => (
-          <div key={item} className="relative z-10 flex flex-col items-center gap-3">
+    <div className="px-4 pb-5 sm:px-6 sm:pb-7">
+      <div className="rounded-[1.4rem] border border-white/12 bg-slate-950/35 p-2 shadow-2xl shadow-black/20 backdrop-blur-2xl">
+        <div className="grid grid-cols-2 gap-2">
+        {steps.map((item) => (
+          <div
+            key={item.id}
+            className={`relative overflow-hidden rounded-[1.1rem] border px-3 py-3 transition ${
+              step >= item.id
+                ? 'border-emerald-300/55 bg-emerald-300/16 text-white shadow-[0_0_24px_rgba(16,185,129,0.2)]'
+                : 'border-white/10 bg-white/[0.04] text-white/55'
+            }`}
+          >
+            {step >= item.id ? (
+              <span className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-emerald-300/20 blur-xl" />
+            ) : null}
             <div
-              className={`flex h-11 w-11 items-center justify-center rounded-full text-base font-black sm:h-14 sm:w-14 sm:text-xl ${
-                step >= item
-                  ? 'bg-yellow-300 text-slate-800'
-                  : 'border-4 border-white/25 bg-transparent text-white'
+              className={`relative mb-2 flex h-8 w-8 items-center justify-center rounded-full text-xs font-black ${
+                step >= item.id
+                  ? 'bg-emerald-300 text-slate-950'
+                  : 'border border-white/25 bg-transparent text-white'
               }`}
             >
-              {item}
+              {item.id}
             </div>
-            <span className={`text-sm font-bold ${step >= item ? 'text-white' : 'text-white/55'}`}>
-              {item === 1 ? 'Rules' : 'Toss'}
-            </span>
+            <span className="relative text-sm font-black">{item.label}</span>
+            <p className={`relative mt-1 text-[0.7rem] font-semibold ${step >= item.id ? 'text-emerald-100' : 'text-white/40'}`}>
+              {item.caption}
+            </p>
           </div>
         ))}
+        </div>
       </div>
     </div>
   )
@@ -48,17 +63,25 @@ function Stepper({ step }) {
 
 function AppHeader({ title, step, onBack }) {
   return (
-    <header className="bg-[#3954b4] text-white">
-      <div className="flex h-20 items-end justify-center px-5 pb-4 sm:h-24 sm:px-6 sm:pb-5">
+    <header className="scoreit-setup-header relative overflow-hidden text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,rgba(52,211,153,0.34),transparent_30%),radial-gradient(circle_at_88%_18%,rgba(245,158,11,0.25),transparent_28%),linear-gradient(135deg,rgba(2,6,23,0.9),rgba(15,23,42,0.64))]" />
+      <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-300/80 to-transparent" />
+      <div className="relative flex h-20 items-end justify-between px-4 pb-4 sm:h-24 sm:px-6 sm:pb-5">
         <button
           type="button"
           onClick={onBack}
-          className="absolute left-4 flex h-10 w-10 items-center justify-center rounded-full text-white sm:left-6 sm:h-12 sm:w-12"
+          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white backdrop-blur-xl sm:h-11 sm:w-11"
           aria-label="Back"
         >
-          <ChevronLeft size={30} />
+          <ChevronLeft size={26} />
         </button>
-        <h1 className="text-xl font-black sm:text-2xl">{title}</h1>
+        <div className="text-center">
+          <p className="mx-auto mb-1 w-max rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1 text-[0.58rem] font-black uppercase tracking-[0.22em] text-emerald-100">
+            Live setup
+          </p>
+          <h1 className="text-lg font-black sm:text-2xl">{title}</h1>
+        </div>
+        <div className="h-10 w-10 sm:h-11 sm:w-11" />
       </div>
       {step ? <Stepper step={step} /> : null}
     </header>
@@ -67,40 +90,33 @@ function AppHeader({ title, step, onBack }) {
 
 function HomeHeader() {
   return (
-    <header className="flex h-24 items-end justify-between bg-[#3954b4] px-5 pb-5 text-white sm:h-28 sm:px-7 sm:pb-6">
-      <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full border-4 border-yellow-300 text-yellow-300 sm:h-14 sm:w-14">
-          <Trophy size={24} />
+    <header className="scoreit-home-hero relative overflow-hidden px-4 pb-5 pt-12 text-white sm:px-7 sm:pb-7 sm:pt-16">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.4),transparent_28%),radial-gradient(circle_at_84%_10%,rgba(250,204,21,0.24),transparent_26%),linear-gradient(145deg,rgba(2,6,23,0.94),rgba(15,23,42,0.7))]" />
+      <div className="absolute inset-x-8 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-300/70 to-transparent" />
+      <div className="relative mx-auto flex max-w-xl items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="scoreit-score-orb flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-300 text-slate-950 sm:h-14 sm:w-14">
+            <Trophy size={24} />
+          </div>
+          <div>
+            <p className="scoreit-live-badge text-[0.62rem] font-black uppercase tracking-[0.2em] text-emerald-100">
+              Live cricket scorer
+            </p>
+            <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">ScoreIt</h1>
+            <p className="mt-1 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-white/60">
+              Made by Rustom Singh Yadav
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-black sm:text-3xl">ScoreIt</h1>
-          <p className="mt-1 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-yellow-200 sm:text-xs sm:tracking-[0.2em]">
-            Made by Rustom Singh Yadav
-          </p>
+        <div className="hidden rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-right backdrop-blur-xl min-[420px]:block">
+          <div className="flex items-center justify-end gap-2 text-amber-200">
+            <Activity size={16} />
+            <p className="text-lg font-black">200</p>
+          </div>
+          <p className="text-[0.62rem] font-black uppercase tracking-[0.18em] text-white/55">Saved matches</p>
         </div>
       </div>
     </header>
-  )
-}
-
-function BottomNav() {
-  const navItems = [
-    { icon: <Home size={30} />, label: 'Home', active: true },
-    { icon: <Users size={30} />, label: 'My Team', active: false },
-    { icon: <Trophy size={30} />, label: 'Tournament', active: false },
-    { icon: <User size={30} />, label: 'Profile', active: false },
-  ]
-
-  return (
-    <nav className="fixed inset-x-0 bottom-0 grid grid-cols-4 bg-[#3954b4] px-3 pb-3 pt-2 text-white shadow-[0_-8px_24px_rgba(15,23,42,0.2)]">
-      {navItems.map(({ icon, label, active }) => (
-        <div key={label} className={`flex flex-col items-center gap-1 ${active ? 'text-white' : 'text-white/60'}`}>
-          {icon}
-          <span className="text-sm font-medium">{label}</span>
-          {active ? <span className="h-1 w-12 rounded-full bg-white" /> : <span className="h-1" />}
-        </div>
-      ))}
-    </nav>
   )
 }
 
@@ -109,18 +125,21 @@ function StartMatchCard({ onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="scoreit-live-card scoreit-floating-card relative h-36 overflow-hidden rounded-3xl bg-[#3954b4] p-5 text-left text-white shadow-lg sm:h-44 sm:p-8"
+      className="scoreit-live-card scoreit-floating-card relative min-h-40 overflow-hidden rounded-[1.6rem] bg-slate-950 p-5 text-left text-white shadow-lg sm:min-h-48 sm:p-7"
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_30%,rgba(255,255,255,0.22),transparent_28%),linear-gradient(90deg,rgba(57,84,180,0.96),rgba(57,84,180,0.68))]" />
-      <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(135deg,transparent_0%,transparent_45%,rgba(255,255,255,0.28)_45%,rgba(255,255,255,0.28)_52%,transparent_52%)]" />
-      <div className="relative flex h-full items-center gap-5 sm:gap-8">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-[#3954b4] sm:h-20 sm:w-20">
-          <Play className="ml-1 fill-[#3954b4]" size={30} />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_28%,rgba(16,185,129,0.36),transparent_28%),radial-gradient(circle_at_8%_100%,rgba(245,158,11,0.3),transparent_30%),linear-gradient(135deg,rgba(15,23,42,0.98),rgba(6,78,59,0.9))]" />
+      <div className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.18em] text-emerald-100">
+        <Sparkles size={12} />
+        New
+      </div>
+      <div className="relative flex h-full items-center gap-4 sm:gap-7">
+        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-emerald-300 text-slate-950 shadow-[0_0_34px_rgba(16,185,129,0.3)] sm:h-20 sm:w-20">
+          <Play className="ml-1 fill-slate-950" size={30} />
         </span>
         <span>
-          <span className="block text-2xl font-black sm:text-3xl">Start Match</span>
-          <span className="mt-2 block text-sm font-medium leading-6 text-white/90 sm:mt-3 sm:text-lg sm:leading-7">
-            Create a new casual match.
+          <span className="block text-2xl font-black tracking-tight sm:text-3xl">Start Match</span>
+          <span className="mt-2 block max-w-xs text-sm font-medium leading-6 text-white/72 sm:mt-3 sm:text-base sm:leading-7">
+            Setup teams, flip the toss, and begin ball-by-ball scoring.
           </span>
         </span>
       </div>
@@ -130,24 +149,48 @@ function StartMatchCard({ onClick }) {
 
 function AppIntroCard() {
   return (
-    <section className="scoreit-live-card rounded-[1.7rem] bg-white p-5 shadow-xl shadow-slate-200">
+    <section className="scoreit-live-card rounded-[1.6rem] bg-white p-5 shadow-xl shadow-slate-200">
       <div className="flex items-start gap-4">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-yellow-300 text-[#3954b4]">
-          <Info size={24} />
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-300 text-slate-950">
+          <Target size={24} />
         </span>
         <div>
-          <h2 className="text-xl font-black">Fast cricket scoring, built for local matches.</h2>
+          <h2 className="text-lg font-black leading-tight sm:text-xl">Fast cricket scoring for local matches.</h2>
           <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
             Create a casual match, flip a real coin toss, enter player names, and score every ball with live scoreboard, overs, analytics, saved matches, and undo.
           </p>
         </div>
       </div>
-      <div className="mt-4 grid gap-2 text-sm font-bold text-slate-600 sm:grid-cols-3">
-        <span className="rounded-2xl bg-slate-100 px-4 py-3">1. Setup rules</span>
-        <span className="rounded-2xl bg-slate-100 px-4 py-3">2. Toss & players</span>
-        <span className="rounded-2xl bg-slate-100 px-4 py-3">3. Start scoring</span>
+      <div className="mt-4 grid gap-2 text-sm font-bold text-slate-600 min-[430px]:grid-cols-3">
+        {['Setup rules', 'Toss & players', 'Start scoring'].map((item, index) => (
+          <span key={item} className="rounded-2xl bg-slate-100 px-4 py-3">
+            {index + 1}. {item}
+          </span>
+        ))}
       </div>
     </section>
+  )
+}
+
+function TimePassCard({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="scoreit-live-card w-full rounded-[1.6rem] bg-white p-5 text-left"
+    >
+      <div className="flex items-center gap-4">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-300 text-slate-950">
+          <Gamepad2 size={25} />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-lg font-black">Time Pass</span>
+          <span className="mt-1 block text-sm font-bold leading-6 text-slate-500">
+            Open Ludo and Chess mini games.
+          </span>
+        </span>
+      </div>
+    </button>
   )
 }
 
@@ -158,29 +201,35 @@ function RecentMatchCard({ match, onOpenMatch, onDeleteMatch }) {
     <button
       type="button"
       onClick={() => onOpenMatch(match)}
-      className="scoreit-live-card w-full rounded-[2rem] bg-yellow-50 p-5 text-left shadow-sm"
+      className="scoreit-live-card w-full rounded-[1.6rem] bg-yellow-50 p-4 text-left shadow-sm sm:p-5"
     >
-      <div className="grid grid-cols-[1fr_1.2fr_1fr] items-center gap-3 text-center">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <Avatar team={match.setup.team1} />
-          <p className="mt-2 text-2xl">{first?.runs || 0}/{first?.wickets || 0}</p>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Latest save</p>
+          <p className="mt-1 text-lg font-black">{match.setup.team1} vs {match.setup.team2}</p>
+        </div>
+        <span className="rounded-full bg-emerald-300 px-3 py-1 text-xs font-black text-slate-950">
+          {match.status === 'complete' ? 'Completed' : 'Resume'}
+        </span>
+      </div>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-center">
+        <div>
+          <Avatar team={match.setup.team1} tone="blue" />
+          <p className="mt-2 text-xl font-black">{first?.runs || 0}/{first?.wickets || 0}</p>
           <p className="text-slate-500">{first ? ballsToOvers(first.legalBalls) : '0.0'} ov</p>
         </div>
         <div>
-          <p className="text-2xl font-medium">Matches 2026</p>
-          <span className="mt-3 inline-block rounded-full bg-[#3954b4] px-4 py-1 text-sm font-bold text-white">
-            {match.setup.team1} Vs {match.setup.team2}
-          </span>
-          <p className="mt-3 text-xl font-black">{new Date(match.updatedAt).toLocaleDateString()}</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Scorecard</p>
+          <p className="mt-2 text-sm font-bold text-slate-500">{new Date(match.updatedAt).toLocaleDateString()}</p>
         </div>
         <div>
           <Avatar team={match.setup.team2} tone="orange" />
-          <p className="mt-2 text-2xl">{second?.runs || 0}/{second?.wickets || 0}</p>
+          <p className="mt-2 text-xl font-black">{second?.runs || 0}/{second?.wickets || 0}</p>
           <p className="text-slate-500">{second ? ballsToOvers(second.legalBalls) : '0.0'} ov</p>
         </div>
       </div>
-      <div className="mt-5 flex items-center justify-between border-t border-slate-500 pt-4">
-        <span className="text-2xl font-medium">Resume Scoring</span>
+      <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
+        <span className="text-base font-black">{match.status === 'complete' ? 'View Details' : 'Continue Scoring'}</span>
         <span
           role="button"
           tabIndex={0}
@@ -213,7 +262,7 @@ function Segment({ options, value, onChange }) {
           onClick={() => onChange(option)}
           className={`rounded-xl px-3 py-3 text-sm font-black transition ${
             value === option
-              ? 'bg-[#3954b4] text-white shadow-lg shadow-blue-900/25'
+              ? 'bg-emerald-300 text-slate-950 shadow-lg shadow-emerald-900/20'
               : 'text-slate-500'
           }`}
         >
@@ -238,7 +287,7 @@ function Counter({ label, value, onChange, min = 1, max = 50 }) {
         <button
           type="button"
           onClick={() => onChange(Math.max(min, Number(value) - 1))}
-          className="flex h-12 items-center justify-center rounded-2xl bg-slate-100 text-[#3954b4] sm:h-16"
+          className="flex h-12 items-center justify-center rounded-2xl bg-slate-100 text-emerald-300 sm:h-16"
         >
           <Minus size={28} />
         </button>
@@ -250,7 +299,7 @@ function Counter({ label, value, onChange, min = 1, max = 50 }) {
         <button
           type="button"
           onClick={() => onChange(Math.min(max, Number(value) + 1))}
-          className="flex h-12 items-center justify-center rounded-2xl bg-slate-100 text-[#3954b4] sm:h-16"
+          className="flex h-12 items-center justify-center rounded-2xl bg-slate-100 text-emerald-300 sm:h-16"
         >
           <Plus size={28} />
         </button>
@@ -264,10 +313,10 @@ function Avatar({ team, tone }) {
     <div
       className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full text-xl font-black shadow-inner sm:h-20 sm:w-20 sm:text-3xl ${
         tone === 'blue'
-          ? 'bg-blue-500 text-white'
+          ? 'bg-cyan-400 text-slate-950'
           : tone === 'orange'
-            ? 'bg-orange-300 text-white'
-            : 'bg-pink-100 text-slate-800'
+            ? 'bg-amber-300 text-slate-950'
+            : 'bg-emerald-300 text-slate-950'
       }`}
     >
       {team?.slice(0, 1).toUpperCase() || 'T'}
@@ -333,7 +382,7 @@ function RealCoinToss({ team1, team2, tossWinner, coinCalls, onCoinCallsChange, 
   }
 
   return (
-    <div className="scoreit-live-card rounded-[1.7rem] bg-white p-6 shadow-xl shadow-slate-200">
+    <div className="scoreit-live-card rounded-[1.5rem] bg-white p-5 shadow-xl shadow-slate-200 sm:p-6">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-black uppercase tracking-[0.24em] text-slate-500">Real Coin Toss</p>
@@ -341,7 +390,7 @@ function RealCoinToss({ team1, team2, tossWinner, coinCalls, onCoinCallsChange, 
             Pick which team calls Heads and Tails.
           </p>
         </div>
-        <span className="rounded-full bg-yellow-100 px-4 py-2 text-sm font-black text-[#3954b4]">
+        <span className="rounded-full bg-emerald-300 px-4 py-2 text-sm font-black text-slate-950">
           {result || 'Ready'}
         </span>
       </div>
@@ -373,7 +422,7 @@ function RealCoinToss({ team1, team2, tossWinner, coinCalls, onCoinCallsChange, 
                     }
                     className={`rounded-xl px-3 py-3 text-sm font-black transition ${
                       active
-                        ? 'bg-[#3954b4] text-white shadow-lg shadow-blue-900/25'
+                        ? 'bg-emerald-300 text-slate-950 shadow-lg shadow-emerald-900/20'
                         : 'bg-white text-slate-500'
                     }`}
                   >
@@ -406,7 +455,7 @@ function RealCoinToss({ team1, team2, tossWinner, coinCalls, onCoinCallsChange, 
         type="button"
         onClick={flipCoin}
         disabled={isTossing}
-        className="mt-6 h-14 w-full rounded-2xl bg-[#3954b4] text-lg font-black text-white disabled:opacity-60"
+        className="mt-6 h-14 w-full rounded-2xl bg-emerald-300 text-base font-black text-slate-950 disabled:opacity-60 sm:text-lg"
       >
         {isTossing ? 'Flipping...' : tossWinner ? 'Flip Again' : 'Flip Coin'}
       </button>
@@ -446,10 +495,6 @@ export default function MatchSetup({
     Heads: draft.team1 || 'Team 1',
     Tails: draft.team2 || 'Team 2',
   }
-  const nextWithTeams = {
-    ...draft,
-    tossWinner: draft.tossWinner === draft.team2 ? draft.team2 : draft.team1,
-  }
 
   const startMatch = () => {
     onSetupChange(draft)
@@ -458,13 +503,14 @@ export default function MatchSetup({
 
   if (screen === 'home') {
     return (
-      <main className="min-h-svh bg-white pb-28 text-slate-800">
+      <main className="min-h-svh bg-white text-slate-800">
         <HomeHeader />
-        <section className="mx-auto max-w-xl space-y-7 px-6 py-7">
+        <section className="mx-auto max-w-xl space-y-5 px-4 py-5 sm:space-y-7 sm:px-6 sm:py-7">
           <AppIntroCard />
           <StartMatchCard onClick={() => setScreen('matchType')} />
+          <TimePassCard onClick={() => setScreen('timePass')} />
           <div>
-            <h2 className="mb-4 text-2xl font-black text-slate-600 sm:mb-5 sm:text-3xl">Recent Matches</h2>
+            <h2 className="mb-3 text-lg font-black text-slate-600 sm:mb-5 sm:text-2xl">Recent Matches</h2>
             {storedMatches.length ? (
               <RecentMatchCard
                 match={storedMatches[0]}
@@ -472,20 +518,23 @@ export default function MatchSetup({
                 onDeleteMatch={onDeleteMatch}
               />
             ) : (
-              <div className="rounded-[2rem] bg-yellow-50 p-6 text-center text-slate-500">
+              <div className="scoreit-live-card rounded-[1.5rem] bg-yellow-50 p-6 text-center text-slate-500">
                 No recent matches yet.
               </div>
             )}
           </div>
         </section>
-        <button
-          type="button"
-          className="fixed bottom-24 right-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-yellow-300 text-[#3954b4] shadow-xl sm:right-7 sm:h-16 sm:w-16"
-        >
-          <BarChart3 size={28} />
-        </button>
-        <BottomNav />
       </main>
+    )
+  }
+
+  if (screen === 'timePass' || screen === 'ludo' || screen === 'chess') {
+    return (
+      <TimePassGames
+        mode={screen === 'timePass' ? 'hub' : screen}
+        onOpenGame={(game) => setScreen(game)}
+        onBack={() => setScreen(screen === 'timePass' ? 'home' : 'timePass')}
+      />
     )
   }
 
@@ -493,31 +542,31 @@ export default function MatchSetup({
     return (
       <main className="min-h-svh bg-slate-100 text-slate-800">
         <AppHeader title="Select Match Type" onBack={() => setScreen('home')} />
-        <section className="mx-auto max-w-xl px-5 py-9">
-          <div className="rounded-[1.7rem] bg-white p-7 shadow-xl shadow-slate-200">
-            <div className="flex items-start gap-5">
-              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-yellow-50 text-4xl sm:h-28 sm:w-28 sm:text-5xl">
-                🏏
+        <section className="mx-auto max-w-xl px-4 py-6 sm:px-5 sm:py-9">
+          <div className="scoreit-live-card rounded-[1.6rem] bg-white p-5 shadow-xl shadow-slate-200 sm:p-7">
+            <div className="flex items-start gap-4 sm:gap-5">
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-3xl bg-emerald-300 sm:h-24 sm:w-24">
+                <Trophy className="text-slate-950" size={34} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-2xl font-black text-slate-900 sm:text-3xl">Casual Match</h2>
-                  <span className="rounded-2xl bg-orange-50 px-4 py-2 text-base font-black text-orange-700">
+                  <h2 className="text-xl font-black text-slate-900 sm:text-3xl">Casual Match</h2>
+                  <span className="rounded-2xl bg-amber-300 px-3 py-2 text-xs font-black text-slate-950 sm:px-4 sm:text-sm">
                     Offline
                   </span>
                 </div>
-                <p className="mt-3 text-xl font-bold text-slate-500">Fast & Simple Scoring</p>
+                <p className="mt-2 text-sm font-bold leading-6 text-slate-500 sm:text-lg">Fast setup for practice, box cricket, and ground cricket.</p>
               </div>
             </div>
-            <div className="mt-8 grid grid-cols-3 divide-x divide-slate-200 text-center text-sm font-black text-slate-500">
-              <span className="px-2">Instant Start</span>
-              <span className="px-2">Saved on this phone</span>
-              <span className="px-2">No Login</span>
+            <div className="mt-6 grid grid-cols-3 gap-2 text-center text-xs font-black text-slate-500 sm:mt-8 sm:text-sm">
+              <span className="rounded-2xl bg-slate-100 px-2 py-3">Instant Start</span>
+              <span className="rounded-2xl bg-slate-100 px-2 py-3">Phone Save</span>
+              <span className="rounded-2xl bg-slate-100 px-2 py-3">No Login</span>
             </div>
             <button
               type="button"
               onClick={() => setScreen('rules')}
-              className="mt-8 h-14 w-full rounded-xl bg-yellow-300 text-lg font-black text-[#3954b4] sm:h-16 sm:text-xl"
+              className="mt-7 h-14 w-full rounded-2xl bg-emerald-300 text-base font-black text-slate-950 sm:mt-8 sm:h-16 sm:text-xl"
             >
               Start Casual Match
             </button>
@@ -531,30 +580,30 @@ export default function MatchSetup({
     return (
       <main className="min-h-svh bg-white text-slate-800">
         <AppHeader title="Player Selection" onBack={() => setScreen('toss')} />
-        <section className="mx-auto max-w-xl space-y-7 px-5 py-7 sm:space-y-10 sm:px-6 sm:py-9">
+        <section className="mx-auto max-w-xl space-y-5 px-4 py-6 sm:space-y-7 sm:px-6 sm:py-9">
           {[
             { label: 'Striker Name', key: 'strikerName', Icon: User, placeholder: 'Enter Player 1 Name' },
             { label: 'Non-Striker Name', key: 'nonStrikerName', Icon: Users, placeholder: 'Enter Player 2 Name' },
             { label: 'Bowler Name', key: 'bowlerName', Icon: Trophy, placeholder: 'Enter Bowler Name' },
           ].map((field) => (
-            <label key={field.key} className="block space-y-4">
-              <span className="text-xl font-black text-slate-800">{field.label}</span>
-              <span className="flex h-16 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-100 px-4 sm:h-20 sm:gap-4 sm:px-6">
-                <field.Icon className="text-slate-300" size={28} />
+            <label key={field.key} className="scoreit-live-card block rounded-[1.4rem] bg-white p-4">
+              <span className="text-base font-black text-slate-800 sm:text-lg">{field.label}</span>
+              <span className="mt-3 flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-100 px-4 sm:h-16 sm:gap-4">
+                <field.Icon className="text-emerald-300" size={24} />
                 <input
                   value={draft[field.key]}
                   onChange={(event) => set(field.key, event.target.value)}
                   placeholder={field.placeholder}
-                  className="w-full bg-transparent text-xl font-bold text-slate-800 outline-none placeholder:text-slate-300"
+                  className="w-full bg-transparent text-base font-bold text-slate-800 outline-none placeholder:text-slate-400 sm:text-lg"
                 />
               </span>
             </label>
           ))}
-          <div className="pt-16 text-center">
+          <div className="pt-4 text-center sm:pt-8">
             <button
               type="button"
               onClick={startMatch}
-              className="h-14 w-full max-w-sm rounded-2xl bg-yellow-300 text-2xl font-medium text-[#3954b4] shadow-md sm:h-16 sm:text-3xl"
+              className="h-14 w-full max-w-sm rounded-2xl bg-emerald-300 text-lg font-black text-slate-950 shadow-md sm:h-16 sm:text-xl"
             >
               Start Match
             </button>
@@ -567,14 +616,15 @@ export default function MatchSetup({
   if (screen === 'started') {
     return (
       <main className="min-h-svh bg-white text-slate-800">
-        <section className="relative min-h-[38svh] overflow-hidden bg-gradient-to-b from-sky-500 to-emerald-900 px-5 py-10 text-center text-white sm:min-h-[46svh] sm:px-6 sm:py-14">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(255,255,255,0.2),transparent_40%)]" />
+        <section className="relative min-h-[34svh] overflow-hidden px-5 py-10 text-center text-white sm:min-h-[42svh] sm:px-6 sm:py-14">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(16,185,129,0.32),transparent_42%),linear-gradient(145deg,#020617,#064e3b)]" />
           <div className="relative mx-auto max-w-md">
-            <h1 className="text-4xl font-black tracking-wide sm:text-5xl">Match Started!</h1>
-            <Trophy className="mx-auto mt-10 text-yellow-300 drop-shadow-2xl sm:mt-14" size={88} />
+            <p className="scoreit-live-badge text-xs font-black uppercase tracking-[0.24em] text-emerald-100">Ready to score</p>
+            <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Match Started!</h1>
+            <Trophy className="mx-auto mt-8 text-amber-300 drop-shadow-2xl sm:mt-12" size={78} />
           </div>
         </section>
-        <section className="relative mx-4 -mt-12 rounded-[2rem] bg-white p-5 text-center shadow-2xl shadow-slate-300 sm:mx-5 sm:-mt-14 sm:p-7">
+        <section className="scoreit-live-card relative mx-4 -mt-10 rounded-[1.7rem] bg-white p-5 text-center shadow-2xl shadow-slate-300 sm:mx-5 sm:-mt-14 sm:p-7">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
             <div>
               <Avatar team={draft.team1} tone="blue" />
@@ -592,13 +642,13 @@ export default function MatchSetup({
             </p>
             <p className="mt-2 font-bold text-slate-500">Track the match in real-time.</p>
           </div>
-          <p className="mt-7 text-sm font-black uppercase tracking-[0.25em] text-amber-500">
+          <p className="hidden">
             ⚡ Fast!! ⚡ Live! ⚡ Fun! ⚡
           </p>
           <button
             type="button"
             onClick={() => onStart(draft)}
-            className="mt-7 h-14 w-full rounded-xl bg-blue-600 text-xl font-medium text-white sm:h-16 sm:text-2xl"
+            className="mt-7 h-14 w-full rounded-2xl bg-emerald-300 text-lg font-black text-slate-950 sm:h-16 sm:text-xl"
           >
             Start Scoring
           </button>
@@ -616,26 +666,26 @@ export default function MatchSetup({
       />
 
       {screen === 'rules' ? (
-        <section className="mx-auto max-w-xl space-y-8 px-5 pb-32 pt-0">
-          <div className="-mt-0 rounded-[1.7rem] bg-white p-6 shadow-xl shadow-slate-200">
+        <section className="mx-auto max-w-xl space-y-5 px-4 pb-28 pt-5 sm:space-y-7 sm:px-5 sm:pb-32">
+          <div className="scoreit-live-card rounded-[1.5rem] bg-white p-5 shadow-xl shadow-slate-200 sm:p-6">
             <p className="mb-5 text-sm font-black uppercase tracking-[0.24em] text-slate-500">Teams</p>
-            <div className="space-y-5">
+            <div className="space-y-3 sm:space-y-5">
               <input
                 value={draft.team1}
                 onChange={(event) => set('team1', event.target.value)}
                 placeholder="Host Team"
-                className="h-16 w-full rounded-2xl bg-slate-100 px-5 text-xl font-bold outline-none placeholder:text-slate-500 sm:h-20 sm:px-6 sm:text-2xl"
+                className="h-14 w-full rounded-2xl bg-slate-100 px-4 text-base font-bold outline-none placeholder:text-slate-500 sm:h-16 sm:px-6 sm:text-xl"
               />
               <input
                 value={draft.team2}
                 onChange={(event) => set('team2', event.target.value)}
                 placeholder="Visitor Team"
-                className="h-16 w-full rounded-2xl bg-slate-100 px-5 text-xl font-bold outline-none placeholder:text-slate-500 sm:h-20 sm:px-6 sm:text-2xl"
+                className="h-14 w-full rounded-2xl bg-slate-100 px-4 text-base font-bold outline-none placeholder:text-slate-500 sm:h-16 sm:px-6 sm:text-xl"
               />
             </div>
           </div>
 
-          <div className="rounded-[1.7rem] bg-white p-6 shadow-xl shadow-slate-200">
+          <div className="scoreit-live-card rounded-[1.5rem] bg-white p-5 shadow-xl shadow-slate-200 sm:p-6">
             <p className="mb-4 text-sm font-black uppercase tracking-[0.24em] text-slate-500">Match Type</p>
             <Segment
               options={['Limited Overs', 'Test Match']}
@@ -648,7 +698,7 @@ export default function MatchSetup({
               value={draft.pitchType}
               onChange={(value) => set('pitchType', value)}
             />
-            <div className="mt-8 space-y-8">
+            <div className="mt-7 space-y-6 sm:space-y-8">
               <Counter label="Overs" value={Number(draft.overs)} onChange={(value) => set('overs', String(value))} />
               <Counter
                 label="Player Per Side"
@@ -666,7 +716,7 @@ export default function MatchSetup({
             <RuleRow label="No Ball Run" value={String(draft.noBallRuns)} onChange={(value) => set('noBallRuns', value)} />
             <div className="mt-7 flex items-center justify-between border-t border-slate-200 pt-6">
               <div className="flex items-center gap-4">
-                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-100 text-purple-600">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-300 text-slate-950 sm:h-14 sm:w-14">
                   <User size={28} />
                 </span>
                 <div>
@@ -678,12 +728,12 @@ export default function MatchSetup({
                 type="button"
                 onClick={() => set('declaredNoStrike', !draft.declaredNoStrike)}
                 className={`h-12 w-20 rounded-full p-1 transition ${
-                  draft.declaredNoStrike ? 'bg-[#3954b4]' : 'bg-slate-300'
+                  draft.declaredNoStrike ? 'bg-emerald-300' : 'bg-slate-300'
                 }`}
               >
                 <span
                   className={`block h-10 w-10 rounded-full bg-white transition ${
-                    draft.declaredNoStrike ? 'translate-x-8' : ''
+                    draft.declaredNoStrike ? 'translate-x-8 bg-slate-950' : ''
                   }`}
                 />
               </button>
@@ -697,8 +747,8 @@ export default function MatchSetup({
           />
         </section>
       ) : (
-        <section className="mx-auto max-w-xl space-y-8 px-5 pb-32 pt-8">
-          <div className="rounded-[1.7rem] bg-white p-6 text-center shadow-xl shadow-slate-200 sm:p-8">
+        <section className="mx-auto max-w-xl space-y-5 px-4 pb-28 pt-5 sm:space-y-7 sm:px-5 sm:pb-32 sm:pt-7">
+          <div className="scoreit-live-card rounded-[1.5rem] bg-white p-5 text-center shadow-xl shadow-slate-200 sm:p-7">
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
               <div>
                 <Avatar team={draft.team1} />
@@ -712,7 +762,7 @@ export default function MatchSetup({
                 <p className="text-lg font-black">{draft.team2}</p>
               </div>
             </div>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <div className="mt-6 flex flex-wrap justify-center gap-2 sm:mt-8 sm:gap-3">
               <Pill>{draft.overs} Overs</Pill>
               <Pill>{draft.playersPerSide} Players</Pill>
               <Pill>{draft.wideRuns} Wide Run</Pill>
@@ -721,19 +771,19 @@ export default function MatchSetup({
           </div>
 
           <div>
-            <p className="mb-8 text-sm font-black uppercase tracking-[0.24em] text-slate-500">Toss Details</p>
+            <p className="mb-4 text-sm font-black uppercase tracking-[0.24em] text-slate-500 sm:mb-6">Toss Details</p>
             <RealCoinToss
               team1={draft.team1 || 'Team 1'}
               team2={draft.team2 || 'Team 2'}
               coinCalls={coinCalls}
               onCoinCallsChange={(nextCalls) => set('coinCalls', nextCalls)}
-              tossWinner={nextWithTeams.tossWinner}
+              tossWinner={draft.tossWinner}
               onWinner={(winner) => set('tossWinner', winner)}
             />
             <p className="mb-4 text-lg font-black">Who won the toss?</p>
             <Segment
               options={[draft.team1 || 'Team 1', draft.team2 || 'Team 2']}
-              value={nextWithTeams.tossWinner}
+              value={draft.tossWinner}
               onChange={(value) => set('tossWinner', value)}
             />
             <p className="mb-4 mt-9 text-lg font-black">Elected to</p>
@@ -742,14 +792,14 @@ export default function MatchSetup({
         </section>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 bg-white p-5 shadow-[0_-8px_28px_rgba(15,23,42,0.08)]">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-slate-950/70 p-4 shadow-[0_-8px_28px_rgba(15,23,42,0.2)] backdrop-blur-2xl sm:p-5">
         <button
           type="button"
           onClick={() => {
             onSetupChange(draft)
             setScreen(screen === 'rules' ? 'toss' : 'players')
           }}
-          className="h-14 w-full rounded-xl bg-yellow-300 text-2xl font-medium text-[#3954b4] sm:h-16 sm:text-3xl"
+          className="mx-auto block h-14 w-full max-w-xl rounded-2xl bg-emerald-300 text-lg font-black text-slate-950 sm:h-16 sm:text-xl"
         >
           {screen === 'rules' ? 'Next' : 'Start A Match'}
         </button>
@@ -773,7 +823,7 @@ function RuleRow({ label, value, onChange }) {
             onClick={() => onChange(option === 'Custom' ? '2' : option)}
             className={`rounded-xl py-3 text-lg font-black transition ${
               (option === 'Custom' ? !['0', '1'].includes(value) : value === option)
-                ? 'bg-[#3954b4] text-white shadow-lg shadow-blue-900/25'
+                ? 'bg-emerald-300 text-slate-950 shadow-lg shadow-emerald-900/20'
                 : 'text-slate-500'
             }`}
           >
@@ -786,14 +836,14 @@ function RuleRow({ label, value, onChange }) {
 }
 
 function Pill({ children }) {
-  return <span className="rounded-full bg-slate-100 px-5 py-3 text-sm font-black text-slate-500">{children}</span>
+  return <span className="rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-slate-500 sm:px-5 sm:py-3 sm:text-sm">{children}</span>
 }
 
 function SavedMatches({ storedMatches, onOpenMatch, onDeleteMatch }) {
   return (
-    <div className="rounded-[1.7rem] bg-white p-5 shadow-xl shadow-slate-200">
+    <div className="scoreit-live-card rounded-[1.5rem] bg-white p-5 shadow-xl shadow-slate-200">
       <div className="mb-4 flex items-center gap-3">
-        <Database className="text-[#3954b4]" size={22} />
+        <Database className="text-emerald-300" size={22} />
         <div>
           <p className="text-lg font-black">Stored Matches</p>
           <p className="text-xs text-slate-500">Last {Math.min(storedMatches.length, 200)} of 200 saved</p>

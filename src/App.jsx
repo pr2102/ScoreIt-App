@@ -21,7 +21,7 @@ const initialSetup = {
   declaredNoStrike: true,
   boundaryA: '12',
   boundaryB: '24',
-  tossWinner: 'Emerald Strikers',
+  tossWinner: '',
   electedTo: 'Bat',
   strikerName: 'Batsman 1',
   nonStrikerName: 'Batsman 2',
@@ -507,6 +507,8 @@ function ScoreItApp() {
     localStorage.setItem('scoreit-theme', theme)
   }, [theme])
 
+  useScoreItInteractions()
+
   const start = (nextSetup = setup) => {
     setSetup(nextSetup)
     setMatch(startMatch(nextSetup))
@@ -621,4 +623,102 @@ function ScoreItApp() {
       {content}
     </div>
   )
+}
+
+function useScoreItInteractions() {
+  useEffect(() => {
+    let audioContext = null
+    let lastSoundAt = 0
+
+    const getAudioContext = () => {
+      if (typeof window === 'undefined') return null
+
+      const AudioContext = window.AudioContext || window.webkitAudioContext
+      if (!AudioContext) return null
+
+      if (!audioContext || audioContext.state === 'closed') {
+        audioContext = new AudioContext()
+      }
+
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(() => {})
+      }
+
+      return audioContext
+    }
+
+    const playTapSound = (button) => {
+      const now = performance.now()
+      if (now - lastSoundAt < 28) return
+      lastSoundAt = now
+
+      const context = getAudioContext()
+      if (!context) return
+
+      const text = button.textContent?.trim().toLowerCase() || ''
+      const isDanger = text.includes('wicket') || text.includes('delete') || text.includes('out')
+      const isScore = /^[0-9]+$/.test(text) || ['wd', 'nb', 'undo'].includes(text)
+      const sound = isDanger
+        ? { start: 190, end: 90, peak: 0.07, duration: 0.075, type: 'square' }
+        : isScore
+          ? { start: 620, end: 860, peak: 0.055, duration: 0.05, type: 'triangle' }
+          : { start: 430, end: 610, peak: 0.045, duration: 0.045, type: 'sine' }
+
+      try {
+        const startTime = context.currentTime + 0.004
+        const oscillator = context.createOscillator()
+        const gain = context.createGain()
+
+        oscillator.type = sound.type
+        oscillator.frequency.setValueAtTime(sound.start, startTime)
+        oscillator.frequency.exponentialRampToValueAtTime(sound.end, startTime + sound.duration)
+        gain.gain.setValueAtTime(0.0001, startTime)
+        gain.gain.exponentialRampToValueAtTime(sound.peak, startTime + 0.008)
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + sound.duration)
+        oscillator.connect(gain)
+        gain.connect(context.destination)
+        oscillator.start(startTime)
+        oscillator.stop(startTime + sound.duration + 0.015)
+      } catch {
+        // Tap sounds are decorative; interaction should never depend on audio.
+      }
+    }
+
+    const decorateTap = (button, event) => {
+      const rect = button.getBoundingClientRect()
+      const x = event.clientX ? `${event.clientX - rect.left}px` : '50%'
+      const y = event.clientY ? `${event.clientY - rect.top}px` : '50%'
+
+      button.style.setProperty('--tap-x', x)
+      button.style.setProperty('--tap-y', y)
+      button.classList.remove('scoreit-tap-burst')
+      // Force restart of the burst animation for rapid repeated taps.
+      void button.offsetWidth
+      button.classList.add('scoreit-tap-burst')
+      window.setTimeout(() => button.classList.remove('scoreit-tap-burst'), 420)
+    }
+
+    const onPointerDown = (event) => {
+      const button = event.target.closest('button, [role="button"]')
+      if (!button || !button.closest('.scoreit-theme')) return
+      if (button.closest('.scoreit-ludo-page')) return
+      if (button.disabled || button.getAttribute('aria-disabled') === 'true') return
+
+      decorateTap(button, event)
+      playTapSound(button)
+
+      if (navigator.vibrate && button.tagName === 'BUTTON') {
+        navigator.vibrate(8)
+      }
+    }
+
+    window.addEventListener('pointerdown', onPointerDown, { passive: true })
+
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown)
+      if (audioContext?.state !== 'closed') {
+        audioContext?.close().catch(() => {})
+      }
+    }
+  }, [])
 }
