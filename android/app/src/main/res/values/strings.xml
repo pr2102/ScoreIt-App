@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ScoreIt</string>
+    <string name="title_activity_main">ScoreIt</string>
+    <string name="package_name">com.pr2102.scoreit</string>
+    <string name="custom_url_scheme">com.pr2102.scoreit</string>
+</resources>
