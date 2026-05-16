@@ -39,8 +39,24 @@ jobs:
       - name: Build Web Asset (Vite)
         run: npm run build
 
-      - name: Sync Capacitor iOS
-        run: npx cap sync ios
+      - name: Prepare iOS Web Assets
+        run: |
+          mkdir -p ios/App/App/public
+          cp -R dist/. ios/App/App/public/
+          cat > ios/App/App/capacitor.config.json <<'EOF'
+          {
+            "appId": "com.pr2102.scoreit",
+            "appName": "ScoreIt",
+            "webDir": "dist",
+            "packageClassList": []
+          }
+          EOF
+          cat > ios/App/App/config.xml <<'EOF'
+          <?xml version='1.0' encoding='utf-8'?>
+          <widget version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+            <access origin="*" />
+          </widget>
+          EOF
 
       - name: Build iOS App Without Signing
         run: |
@@ -104,8 +120,24 @@ jobs:
       - name: Build Web Asset (Vite)
         run: npm run build
 
-      - name: Sync Capacitor iOS
-        run: npx cap sync ios
+      - name: Prepare iOS Web Assets
+        run: |
+          mkdir -p ios/App/App/public
+          cp -R dist/. ios/App/App/public/
+          cat > ios/App/App/capacitor.config.json <<'EOF'
+          {
+            "appId": "com.pr2102.scoreit",
+            "appName": "ScoreIt",
+            "webDir": "dist",
+            "packageClassList": []
+          }
+          EOF
+          cat > ios/App/App/config.xml <<'EOF'
+          <?xml version='1.0' encoding='utf-8'?>
+          <widget version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+            <access origin="*" />
+          </widget>
+          EOF
 
       - name: Install Apple Signing Assets
         run: |
